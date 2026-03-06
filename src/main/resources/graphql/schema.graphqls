@@ -6,10 +6,17 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
 }
 
+
+
 type ConfigResponse {
     tenantId: ID!
+    tenantName: String!
+    tenantLogo:String!
+    tenantBanner:String!
+    tenantCopyright:String!
     properties: [PropertyConfig!]!
 }
+
 
 type PropertyConfig {
     propertyId: ID!

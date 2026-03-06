@@ -12,5 +12,9 @@ import java.util.UUID;
 @Builder
 public class ConfigResponseDto {
     private UUID tenantId;
+    private String tenantName;
+    private String tenantLogo;
+    private String tenantBanner;
+    private String tenantCopyright;
     private List<PropertyConfigDto> properties;
 }

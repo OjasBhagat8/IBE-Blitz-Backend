@@ -5,7 +5,9 @@ import com.example.ibe_blits_backend.dto.GuestTypeDto;
 import com.example.ibe_blits_backend.dto.PropertyConfigDto;
 import com.example.ibe_blits_backend.entities.GuestType;
 import com.example.ibe_blits_backend.entities.Property;
+import com.example.ibe_blits_backend.entities.Tenant;
 import com.example.ibe_blits_backend.repositories.PropertyRepository;
+import com.example.ibe_blits_backend.repositories.TenantRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,7 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class ConfigService {
-
+    private final TenantRepository tenantRepository;
     private final PropertyRepository propertyRepository;
 
     public ConfigResponseDto getConfigByTenant(UUID tenantId) {
@@ -24,9 +26,14 @@ public class ConfigService {
         List<PropertyConfigDto> propertyDtos = properties.stream()
                 .map(this::mapPropertyToDto)
                 .toList();
+        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow(() ->new IllegalArgumentException("Tenant not found" + tenantId));
 
         return ConfigResponseDto.builder()
                 .tenantId(tenantId)
+                .tenantName(tenant.getTenantName())
+                .tenantLogo(tenant.getTenantLogo())
+                .tenantBanner(tenant.getTenantBanner())
+                .tenantCopyright(tenant.getTenantCopyright())
                 .properties(propertyDtos)
                 .build();
     }
