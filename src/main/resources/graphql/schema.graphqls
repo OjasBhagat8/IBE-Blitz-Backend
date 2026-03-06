@@ -1,0 +1,31 @@
+schema {
+    query: Query
+}
+
+type Query {
+    config(tenantId: ID!): ConfigResponse!
+}
+
+type ConfigResponse {
+    tenantId: ID!
+    properties: [PropertyConfig!]!
+}
+
+type PropertyConfig {
+    propertyId: ID!
+    propertyName: String!
+    guestAllowed: Int
+    guestFlag: Boolean
+    roomCount: Int
+    lengthOfStay: Int
+    roomFlag: Boolean
+    accessibleFlag: Boolean
+    guestTypes: [GuestType!]!
+}
+
+type GuestType {
+    guestTypeId: ID!
+    guestTypeName: String!
+    minAge: Int!
+    maxAge: Int!
+}
