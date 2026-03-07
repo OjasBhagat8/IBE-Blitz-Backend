@@ -4,9 +4,15 @@ schema {
 
 type Query {
     config(tenantId: ID!): ConfigResponse!
+    calenderPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
 }
 
-
+type DailyLeastPrice {
+    date: String!
+    propertyId: ID!
+    roomTypeId: ID
+    price: Float!
+}
 
 type ConfigResponse {
     tenantId: ID!
