@@ -21,12 +21,25 @@ public class ConfigService {
     private final PropertyRepository propertyRepository;
 
     public ConfigResponseDto getConfigByTenant(UUID tenantId) {
+        Tenant tenant = tenantRepository.findById(tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found " + tenantId));
+        return buildConfigResponse(tenant);
+    }
+
+    public ConfigResponseDto getConfigByTenantName(String tenantName) {
+        Tenant tenant = tenantRepository.findByTenantNameIgnoreCase(tenantName)
+                .or(() -> tenantRepository.findFirstByTenantNameContainingIgnoreCase(tenantName))
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found " + tenantName));
+        return buildConfigResponse(tenant);
+    }
+
+    private ConfigResponseDto buildConfigResponse(Tenant tenant) {
+        UUID tenantId = tenant.getTenantId();
         List<Property> properties = propertyRepository.findByTenant_TenantId(tenantId);
 
         List<PropertyConfigDto> propertyDtos = properties.stream()
                 .map(this::mapPropertyToDto)
                 .toList();
-        Tenant tenant = tenantRepository.findById(tenantId).orElseThrow(() ->new IllegalArgumentException("Tenant not found" + tenantId));
 
         return ConfigResponseDto.builder()
                 .tenantId(tenantId)

@@ -3,9 +3,16 @@ schema {
 }
 
 type Query {
+    tenants: [TenantSummary!]!
     config(tenantId: ID!): ConfigResponse!
+    configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
     searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+}
+
+type TenantSummary {
+    tenantId: ID!
+    tenantName: String!
 }
 
 type DailyLeastPrice {

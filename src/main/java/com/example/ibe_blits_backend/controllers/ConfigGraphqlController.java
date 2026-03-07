@@ -19,4 +19,9 @@ public class ConfigGraphqlController {
     public ConfigResponseDto config(@Argument UUID tenantId) {
         return configService.getConfigByTenant(tenantId);
     }
+
+    @QueryMapping
+    public ConfigResponseDto configByTenantName(@Argument String tenantName) {
+        return configService.getConfigByTenantName(tenantName);
+    }
 }
