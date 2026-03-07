@@ -11,36 +11,84 @@ env:
 phases:
   install:
     commands:
+      - set -e
       - echo "Backend build started"
       - aws --version
       - docker --version
 
   pre_build:
     commands:
+      - set -e
       - echo "Resolving AWS account and image tag"
       - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
       - ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
-      - IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual} | cut -c 1-7)
-      - if [ -z "$IMAGE_TAG" ]; then IMAGE_TAG=manual; fi
+      - SHORT_SHA=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual}" | cut -c 1-7)
+      - BUILD_NUM="${CODEBUILD_BUILD_NUMBER:-0}"
+      - IMAGE_TAG="${SHORT_SHA}-${BUILD_NUM}"
+      - export IMAGE_TAG
       - echo "IMAGE_TAG=$IMAGE_TAG"
       - echo "Logging in to ECR"
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
       - REPOSITORY_URI="$ECR_REGISTRY/$ECR_REPOSITORY"
+      - export REPOSITORY_URI
 
   build:
     commands:
+      - set -e
       - echo "Building backend Docker image"
       - docker build -t "$ECR_REPOSITORY:$IMAGE_TAG" .
       - docker tag "$ECR_REPOSITORY:$IMAGE_TAG" "$REPOSITORY_URI:$IMAGE_TAG"
-      - docker tag "$ECR_REPOSITORY:$IMAGE_TAG" "$REPOSITORY_URI:latest"
       - echo "Pushing images to ECR"
       - docker push "$REPOSITORY_URI:$IMAGE_TAG"
-      - docker push "$REPOSITORY_URI:latest"
 
   post_build:
     commands:
+      - set -e
+      - if [ "$CODEBUILD_BUILD_SUCCEEDING" != "1" ]; then echo "Build failed earlier. Skipping deploy."; exit 1; fi
+      - echo "Resolving current ECS task definition"
+      - CURRENT_TASK_DEF_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --region "$AWS_DEFAULT_REGION" --query 'services[0].taskDefinition' --output text)
+      - aws ecs describe-task-definition --task-definition "$CURRENT_TASK_DEF_ARN" --region "$AWS_DEFAULT_REGION" --query 'taskDefinition' > taskdef.json
+      - |
+        python - <<'PY'
+        import json
+        import os
+
+        container_name = os.environ["CONTAINER_NAME"]
+        repository_uri = os.environ["REPOSITORY_URI"]
+        image_tag = os.environ["IMAGE_TAG"]
+        image_uri = f"{repository_uri}:{image_tag}"
+
+        with open("taskdef.json", "r", encoding="utf-8") as f:
+            taskdef = json.load(f)
+
+        for key in [
+            "taskDefinitionArn",
+            "revision",
+            "status",
+            "requiresAttributes",
+            "compatibilities",
+            "registeredAt",
+            "registeredBy",
+        ]:
+            taskdef.pop(key, None)
+
+        updated = False
+        for container in taskdef.get("containerDefinitions", []):
+            if container.get("name") == container_name:
+                container["image"] = image_uri
+                updated = True
+                break
+
+        if not updated:
+            raise RuntimeError(f"Container '{container_name}' not found in task definition")
+
+        with open("register-taskdef.json", "w", encoding="utf-8") as f:
+            json.dump(taskdef, f)
+        PY
+      - echo "Registering new task definition revision"
+      - NEW_TASK_DEF_ARN=$(aws ecs register-task-definition --cli-input-json file://register-taskdef.json --region "$AWS_DEFAULT_REGION" --query 'taskDefinition.taskDefinitionArn' --output text)
       - echo "Triggering ECS deployment"
-      - aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment --region "$AWS_DEFAULT_REGION"
+      - aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --task-definition "$NEW_TASK_DEF_ARN" --region "$AWS_DEFAULT_REGION"
       - echo "Waiting for ECS service stability"
       - aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --region "$AWS_DEFAULT_REGION"
       - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
@@ -50,4 +98,3 @@ artifacts:
   files:
     - imagedefinitions.json
   discard-paths: yes
-
