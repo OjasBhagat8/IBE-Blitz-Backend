@@ -1,0 +1,53 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: "ap-northeast-1"
+    ECR_REPOSITORY: "ibe-blitz-dev-backend"
+    ECS_CLUSTER: "ibe-blitz-dev-ecs-cluster"
+    ECS_SERVICE: "ibe-blitz-dev-backend"
+    CONTAINER_NAME: "backend"
+
+phases:
+  install:
+    commands:
+      - echo "Backend build started"
+      - aws --version
+      - docker --version
+
+  pre_build:
+    commands:
+      - echo "Resolving AWS account and image tag"
+      - AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+      - ECR_REGISTRY="$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com"
+      - IMAGE_TAG=$(echo ${CODEBUILD_RESOLVED_SOURCE_VERSION:-manual} | cut -c 1-7)
+      - if [ -z "$IMAGE_TAG" ]; then IMAGE_TAG=manual; fi
+      - echo "IMAGE_TAG=$IMAGE_TAG"
+      - echo "Logging in to ECR"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REGISTRY"
+      - REPOSITORY_URI="$ECR_REGISTRY/$ECR_REPOSITORY"
+
+  build:
+    commands:
+      - echo "Building backend Docker image"
+      - docker build -t "$ECR_REPOSITORY:$IMAGE_TAG" .
+      - docker tag "$ECR_REPOSITORY:$IMAGE_TAG" "$REPOSITORY_URI:$IMAGE_TAG"
+      - docker tag "$ECR_REPOSITORY:$IMAGE_TAG" "$REPOSITORY_URI:latest"
+      - echo "Pushing images to ECR"
+      - docker push "$REPOSITORY_URI:$IMAGE_TAG"
+      - docker push "$REPOSITORY_URI:latest"
+
+  post_build:
+    commands:
+      - echo "Triggering ECS deployment"
+      - aws ecs update-service --cluster "$ECS_CLUSTER" --service "$ECS_SERVICE" --force-new-deployment --region "$AWS_DEFAULT_REGION"
+      - echo "Waiting for ECS service stability"
+      - aws ecs wait services-stable --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --region "$AWS_DEFAULT_REGION"
+      - printf '[{"name":"%s","imageUri":"%s"}]' "$CONTAINER_NAME" "$REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+      - echo "Deployment completed"
+
+artifacts:
+  files:
+    - imagedefinitions.json
+  discard-paths: yes
+

@@ -18,7 +18,7 @@ public class CalenderGraphQlController {
     private final CalenderService calenderService;
 
     @QueryMapping
-    public List<DailyLeastPriceDto> calenderPrices(
+    public List<DailyLeastPriceDto> calendarPrices(
             @Argument UUID tenantId,
             @Argument UUID propertyId,
             @Argument String startDate

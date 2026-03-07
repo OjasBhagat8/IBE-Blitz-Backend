@@ -14,4 +14,11 @@ public interface PriceRepository extends JpaRepository<Prices, UUID> {
             UUID tenantId,
             Date date
     );
+
+    List<Prices> findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(
+            UUID propertyId,
+            UUID tenantId,
+            Date from,
+            Date to
+    );
 }

@@ -9,7 +9,7 @@ public class CorsConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/graphql")
+        registry.addMapping("/api/graphql")
                 .allowedOrigins(
                         "http://localhost:3000",
                         "http://localhost:4000",

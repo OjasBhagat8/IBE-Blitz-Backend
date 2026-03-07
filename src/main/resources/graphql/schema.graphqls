@@ -4,7 +4,8 @@ schema {
 
 type Query {
     config(tenantId: ID!): ConfigResponse!
-    calenderPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
 }
 
 type DailyLeastPrice {
@@ -12,6 +13,22 @@ type DailyLeastPrice {
     propertyId: ID!
     roomTypeId: ID
     price: Float!
+}
+
+input SearchRoomsInput {
+    tenantId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    rooms: Int!
+    accessible: Boolean
+}
+
+type RoomSearchResult {
+    roomTypeId: ID!
+    roomTypeName: String!
+    totalPrice: Float!
+    availableCount: Int!
 }
 
 type ConfigResponse {
