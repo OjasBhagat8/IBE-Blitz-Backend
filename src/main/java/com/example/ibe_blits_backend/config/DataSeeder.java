@@ -1,4 +1,4 @@
-﻿package com.example.ibe_blits_backend.config;
+package com.example.ibe_blits_backend.config;
 
 import com.example.ibe_blits_backend.entities.FilterConfig;
 import com.example.ibe_blits_backend.entities.FilterOptions;
