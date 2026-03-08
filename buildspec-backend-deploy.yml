@@ -7,6 +7,7 @@ env:
     ECS_CLUSTER: "ibe-blitz-dev-ecs-cluster"
     ECS_SERVICE: "ibe-blitz-dev-backend"
     CONTAINER_NAME: "backend"
+    LOG_GROUP_NAME: "/ecs/ibe-blitz-dev-backend"
 
 phases:
   install:
@@ -38,7 +39,7 @@ phases:
       - echo "Building backend Docker image"
       - docker build -t "$ECR_REPOSITORY:$IMAGE_TAG" .
       - docker tag "$ECR_REPOSITORY:$IMAGE_TAG" "$REPOSITORY_URI:$IMAGE_TAG"
-      - echo "Pushing images to ECR"
+      - echo "Pushing image to ECR"
       - docker push "$REPOSITORY_URI:$IMAGE_TAG"
 
   post_build:
@@ -57,6 +58,8 @@ phases:
         repository_uri = os.environ["REPOSITORY_URI"]
         image_tag = os.environ["IMAGE_TAG"]
         image_uri = f"{repository_uri}:{image_tag}"
+        log_group = os.environ["LOG_GROUP_NAME"]
+        region = os.environ["AWS_DEFAULT_REGION"]
 
         with open("taskdef.json", "r", encoding="utf-8") as f:
             taskdef = json.load(f)
@@ -76,6 +79,15 @@ phases:
         for container in taskdef.get("containerDefinitions", []):
             if container.get("name") == container_name:
                 container["image"] = image_uri
+                container.pop("healthCheck", None)
+                container["logConfiguration"] = {
+                    "logDriver": "awslogs",
+                    "options": {
+                        "awslogs-group": log_group,
+                        "awslogs-region": region,
+                        "awslogs-stream-prefix": "ecs",
+                    },
+                }
                 updated = True
                 break
 
