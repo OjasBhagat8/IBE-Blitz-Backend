@@ -50,7 +50,7 @@ phases:
       - CURRENT_TASK_DEF_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --region "$AWS_DEFAULT_REGION" --query 'services[0].taskDefinition' --output text)
       - aws ecs describe-task-definition --task-definition "$CURRENT_TASK_DEF_ARN" --region "$AWS_DEFAULT_REGION" --query 'taskDefinition' > taskdef.json
       - |
-        python3 - <<'PY'
+        python - <<'PY'
         import json
         import os
 
@@ -89,23 +89,29 @@ phases:
                     },
                 }
 
-                # Rewrite secrets so Spring receives concrete DB/env vars.
+                # Keep deployment idempotent across old and new secret layouts.
                 existing = {s.get("name"): s.get("valueFrom") for s in container.get("secrets", [])}
                 aurora_secret = existing.get("DB_SECRET")
                 app_secret = existing.get("APP_SECRET")
 
-                if not aurora_secret or not app_secret:
-                    raise RuntimeError("Expected DB_SECRET and APP_SECRET in current task definition")
-
-                container["secrets"] = [
-                    {"name": "DB_HOST", "valueFrom": f"{aurora_secret}:host::"},
-                    {"name": "DB_PORT", "valueFrom": f"{aurora_secret}:port::"},
-                    {"name": "DB_NAME", "valueFrom": f"{aurora_secret}:dbname::"},
-                    {"name": "DB_USERNAME", "valueFrom": f"{aurora_secret}:username::"},
-                    {"name": "DB_PASSWORD", "valueFrom": f"{aurora_secret}:password::"},
-                    {"name": "SPRING_PROFILES_ACTIVE", "valueFrom": f"{app_secret}:SPRING_PROFILES_ACTIVE::"},
-                    {"name": "JWT_SECRET", "valueFrom": f"{app_secret}:JWT_SECRET::"},
-                ]
+                if aurora_secret and app_secret:
+                    container["secrets"] = [
+                        {"name": "DB_HOST", "valueFrom": f"{aurora_secret}:host::"},
+                        {"name": "DB_PORT", "valueFrom": f"{aurora_secret}:port::"},
+                        {"name": "DB_NAME", "valueFrom": f"{aurora_secret}:dbname::"},
+                        {"name": "DB_USERNAME", "valueFrom": f"{aurora_secret}:username::"},
+                        {"name": "DB_PASSWORD", "valueFrom": f"{aurora_secret}:password::"},
+                        {"name": "SPRING_PROFILES_ACTIVE", "valueFrom": f"{app_secret}:SPRING_PROFILES_ACTIVE::"},
+                        {"name": "JWT_SECRET", "valueFrom": f"{app_secret}:JWT_SECRET::"},
+                    ]
+                else:
+                    required_new = {
+                        "DB_HOST", "DB_PORT", "DB_NAME", "DB_USERNAME", "DB_PASSWORD",
+                        "SPRING_PROFILES_ACTIVE", "JWT_SECRET"
+                    }
+                    missing = sorted(required_new - set(existing.keys()))
+                    if missing:
+                        raise RuntimeError(f"Task definition secrets missing required keys: {', '.join(missing)}")
 
                 updated = True
                 break
@@ -129,4 +135,5 @@ artifacts:
   files:
     - imagedefinitions.json
   discard-paths: yes
+
 
