@@ -1,4 +1,4 @@
-package com.example.ibe_blits_backend.config;
+﻿package com.example.ibe_blits_backend.config;
 
 import com.example.ibe_blits_backend.entities.FilterConfig;
 import com.example.ibe_blits_backend.entities.FilterOptions;
@@ -28,8 +28,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -50,114 +52,170 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        if (tenantRepository.count() > 0) {
+        if (tenantRepository.count() > 1) {
             log.info("Skipping seed: data already exists.");
             return;
         }
 
-        Tenant tenant = Tenant.builder()
-                .tenantName("kickdrum")
-                .tenantLogo("https://example.com/logo.png")
-                .tenantBanner("https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80")
-                .tenantCopyright("© Kickdrum IBE 2026")
-                .build();
-        tenant = tenantRepository.save(tenant);
+        Tenant radison = tenantRepository.save(Tenant.builder()
+                .tenantName("Radison")
+                .tenantLogo("https://1000logos.net/wp-content/uploads/2020/01/Radisson-Logo.png")
+                .tenantBanner("https://1000logos.net/wp-content/uploads/2020/01/Radisson-Logo.png")
+                .tenantCopyright("(c) Radison")
+                .build());
 
-        Property property = Property.builder()
-                .propertyName("IBE Tokyo Hotel")
-                .tenant(tenant)
-                .guestAllowed(4)
-                .guestFlag(true)
-                .roomCount(4)
-                .lengthOfStay(7)
-                .roomFlag(true)
-                .accessibleFlag(true)
-                .build();
-        property = propertyRepository.save(property);
+        Tenant hilton = tenantRepository.save(Tenant.builder()
+                .tenantName("Hilton")
+                .tenantLogo("https://1000logos.net/wp-content/uploads/2017/03/Hilton-logo.png")
+                .tenantBanner("https://1000logos.net/wp-content/uploads/2017/03/Hilton-logo.png")
+                .tenantCopyright("(c) Hilton")
+                .build());
 
-        GuestType adult = GuestType.builder()
-                .property(property)
-                .guestTypeName("Adult")
-                .minAge(18)
-                .maxAge(120)
-                .build();
-        GuestType child = GuestType.builder()
-                .property(property)
-                .guestTypeName("Child")
-                .minAge(2)
-                .maxAge(17)
-                .build();
-        guestTypeRepository.saveAll(List.of(adult, child));
-
-        RoomSpec standardSpec = RoomSpec.builder()
-                .bedType("Queen")
-                .area(new BigDecimal("25.00"))
-                .minOcc(1)
-                .maxOcc(2)
-                .quantity(20)
-                .build();
-        RoomSpec familySpec = RoomSpec.builder()
-                .bedType("Twin")
-                .area(new BigDecimal("32.00"))
-                .minOcc(1)
-                .maxOcc(4)
-                .quantity(10)
-                .build();
-        roomSpecRepository.saveAll(List.of(standardSpec, familySpec));
-
-        RoomType standard = RoomType.builder()
-                .property(property)
-                .roomTypeName("Standard Room")
-                .roomSpec(standardSpec)
-                .build();
-        RoomType family = RoomType.builder()
-                .property(property)
-                .roomTypeName("Family Suite")
-                .roomSpec(familySpec)
-                .build();
-        roomTypeRepository.saveAll(List.of(standard, family));
-
-        FilterConfig filterConfig = FilterConfig.builder()
-                .property(property)
-                .build();
-        filterConfig = filterConfigRepository.save(filterConfig);
-
-        Filters amenities = Filters.builder()
-                .filterName("Amenities")
-                .filterConfig(filterConfig)
-                .build();
-        Filters view = Filters.builder()
-                .filterName("View")
-                .filterConfig(filterConfig)
-                .build();
-        filtersRepository.saveAll(List.of(amenities, view));
-
-        filterOptionsRepository.saveAll(List.of(
-                FilterOptions.builder().filter(amenities).value("Wifi").build(),
-                FilterOptions.builder().filter(amenities).value("Breakfast").build(),
-                FilterOptions.builder().filter(view).value("City").build(),
-                FilterOptions.builder().filter(view).value("Sea").build()
+        List<Property> properties = propertyRepository.saveAll(List.of(
+                property("Radison Mumbai", radison, 4, true, 120, 3, false, true),
+                property("Radison Bangalore", radison, 3, false, 90, 5, true, false),
+                property("Radison Delhi", radison, 5, true, 150, 2, true, false),
+                property("Hilton Delhi", hilton, 2, false, 80, 4, false, true),
+                property("Hilton Bangalore", hilton, 6, true, 200, 1, true, true)
         ));
 
-        LocalDate start = LocalDate.now();
-        for (int i = 0; i < 7; i++) {
-            Date current = Date.valueOf(start.plusDays(i));
-            priceRepository.save(Prices.builder()
-                    .roomType(standard)
-                    .property(property)
-                    .roomPrice(new BigDecimal("12000.00"))
-                    .quantity(20)
-                    .date(current)
-                    .build());
-            priceRepository.save(Prices.builder()
-                    .roomType(family)
-                    .property(property)
-                    .roomPrice(new BigDecimal("18500.00"))
-                    .quantity(10)
-                    .date(current)
-                    .build());
+        Map<String, Property> propertyByName = new LinkedHashMap<>();
+        for (Property property : properties) {
+            propertyByName.put(property.getPropertyName(), property);
         }
 
-        log.info("Seed complete. tenantId={} propertyId={}", tenant.getTenantId(), property.getPropertyId());
+        List<GuestType> guestTypes = new ArrayList<>();
+        addGuestTypes(guestTypes, propertyByName.get("Radison Mumbai"), List.of(
+                guestTypeDef("Children", 3, 12),
+                guestTypeDef("Adults", 13, 59)
+        ));
+        addGuestTypes(guestTypes, propertyByName.get("Radison Bangalore"), List.of(
+                guestTypeDef("Children", 3, 12),
+                guestTypeDef("Adults", 13, 59)
+        ));
+        addGuestTypes(guestTypes, propertyByName.get("Radison Delhi"), List.of(
+                guestTypeDef("Children", 3, 12),
+                guestTypeDef("Adults", 13, 59)
+        ));
+        addGuestTypes(guestTypes, propertyByName.get("Hilton Delhi"), List.of(
+                guestTypeDef("Toddlers", 0, 2),
+                guestTypeDef("Children", 3, 12),
+                guestTypeDef("Adults", 13, 59),
+                guestTypeDef("Senior Citizen", 60, 120)
+        ));
+        addGuestTypes(guestTypes, propertyByName.get("Hilton Bangalore"), List.of(
+                guestTypeDef("Toddlers", 0, 2),
+                guestTypeDef("Children", 3, 12),
+                guestTypeDef("Adults", 13, 59),
+                guestTypeDef("Senior Citizen", 60, 120)
+        ));
+        guestTypeRepository.saveAll(guestTypes);
+
+        List<RoomSpec> roomSpecs = roomSpecRepository.saveAll(List.of(
+                RoomSpec.builder().bedType("King Bed").area(new BigDecimal("320.00")).minOcc(1).maxOcc(2).quantity(20).build(),
+                RoomSpec.builder().bedType("Twin Bed").area(new BigDecimal("420.00")).minOcc(1).maxOcc(4).quantity(15).build()
+        ));
+
+        RoomSpec defaultSpec = roomSpecs.get(0);
+        List<RoomType> roomTypes = new ArrayList<>();
+        for (Property property : properties) {
+            roomTypes.add(RoomType.builder()
+                    .property(property)
+                    .roomTypeName(property.getPropertyName() + " Deluxe")
+                    .roomSpec(defaultSpec)
+                    .build());
+        }
+        roomTypes = roomTypeRepository.saveAll(roomTypes);
+
+        List<Prices> prices = new ArrayList<>();
+        LocalDate start = LocalDate.now();
+        LocalDate end = start.plusDays(90);
+        for (RoomType roomType : roomTypes) {
+            for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
+                int dow = date.getDayOfWeek().getValue() % 7; // Sunday=0, Monday=1 ... Saturday=6
+                BigDecimal amount = BigDecimal.valueOf(7000L + (long) dow * 250L).setScale(2);
+                prices.add(Prices.builder()
+                        .roomType(roomType)
+                        .property(roomType.getProperty())
+                        .roomPrice(amount)
+                        .quantity(8)
+                        .date(Date.valueOf(date))
+                        .build());
+            }
+        }
+        priceRepository.saveAll(prices);
+
+        seedFilterConfig(properties);
+
+        log.info("Seed complete. tenants={} properties={} roomTypes={} prices={}",
+                tenantRepository.count(),
+                propertyRepository.count(),
+                roomTypeRepository.count(),
+                priceRepository.count());
+    }
+
+    private Property property(
+            String name,
+            Tenant tenant,
+            Integer guestAllowed,
+            Boolean guestFlag,
+            Integer roomCount,
+            Integer lengthOfStay,
+            Boolean roomFlag,
+            Boolean accessibleFlag
+    ) {
+        return Property.builder()
+                .propertyName(name)
+                .tenant(tenant)
+                .guestAllowed(guestAllowed)
+                .guestFlag(guestFlag)
+                .roomCount(roomCount)
+                .lengthOfStay(lengthOfStay)
+                .roomFlag(roomFlag)
+                .accessibleFlag(accessibleFlag)
+                .build();
+    }
+
+    private GuestTypeDef guestTypeDef(String name, Integer minAge, Integer maxAge) {
+        return new GuestTypeDef(name, minAge, maxAge);
+    }
+
+    private void addGuestTypes(List<GuestType> target, Property property, List<GuestTypeDef> defs) {
+        for (GuestTypeDef def : defs) {
+            target.add(GuestType.builder()
+                    .property(property)
+                    .guestTypeName(def.name())
+                    .minAge(def.minAge())
+                    .maxAge(def.maxAge())
+                    .build());
+        }
+    }
+
+    private void seedFilterConfig(List<Property> properties) {
+        for (Property property : properties) {
+            FilterConfig config = filterConfigRepository.save(FilterConfig.builder()
+                    .property(property)
+                    .build());
+
+            Filters amenities = Filters.builder()
+                    .filterName("Amenities")
+                    .filterConfig(config)
+                    .build();
+            Filters view = Filters.builder()
+                    .filterName("View")
+                    .filterConfig(config)
+                    .build();
+            filtersRepository.saveAll(List.of(amenities, view));
+
+            filterOptionsRepository.saveAll(List.of(
+                    FilterOptions.builder().filter(amenities).value("Wifi").build(),
+                    FilterOptions.builder().filter(amenities).value("Breakfast").build(),
+                    FilterOptions.builder().filter(view).value("City").build(),
+                    FilterOptions.builder().filter(view).value("Sea").build()
+            ));
+        }
+    }
+
+    private record GuestTypeDef(String name, Integer minAge, Integer maxAge) {
     }
 }
