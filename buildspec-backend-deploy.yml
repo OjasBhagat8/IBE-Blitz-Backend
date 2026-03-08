@@ -50,7 +50,7 @@ phases:
       - CURRENT_TASK_DEF_ARN=$(aws ecs describe-services --cluster "$ECS_CLUSTER" --services "$ECS_SERVICE" --region "$AWS_DEFAULT_REGION" --query 'services[0].taskDefinition' --output text)
       - aws ecs describe-task-definition --task-definition "$CURRENT_TASK_DEF_ARN" --region "$AWS_DEFAULT_REGION" --query 'taskDefinition' > taskdef.json
       - |
-        python - <<'PY'
+        python3 - <<'PY'
         import json
         import os
 
