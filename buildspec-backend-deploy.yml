@@ -88,6 +88,25 @@ phases:
                         "awslogs-stream-prefix": "ecs",
                     },
                 }
+
+                # Rewrite secrets so Spring receives concrete DB/env vars.
+                existing = {s.get("name"): s.get("valueFrom") for s in container.get("secrets", [])}
+                aurora_secret = existing.get("DB_SECRET")
+                app_secret = existing.get("APP_SECRET")
+
+                if not aurora_secret or not app_secret:
+                    raise RuntimeError("Expected DB_SECRET and APP_SECRET in current task definition")
+
+                container["secrets"] = [
+                    {"name": "DB_HOST", "valueFrom": f"{aurora_secret}:host::"},
+                    {"name": "DB_PORT", "valueFrom": f"{aurora_secret}:port::"},
+                    {"name": "DB_NAME", "valueFrom": f"{aurora_secret}:dbname::"},
+                    {"name": "DB_USERNAME", "valueFrom": f"{aurora_secret}:username::"},
+                    {"name": "DB_PASSWORD", "valueFrom": f"{aurora_secret}:password::"},
+                    {"name": "SPRING_PROFILES_ACTIVE", "valueFrom": f"{app_secret}:SPRING_PROFILES_ACTIVE::"},
+                    {"name": "JWT_SECRET", "valueFrom": f"{app_secret}:JWT_SECRET::"},
+                ]
+
                 updated = True
                 break
 
@@ -110,3 +129,4 @@ artifacts:
   files:
     - imagedefinitions.json
   discard-paths: yes
+
