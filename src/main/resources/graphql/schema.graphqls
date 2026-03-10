@@ -1,0 +1,119 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    tenants: [TenantSummary!]!
+    config(tenantId: ID!): ConfigResponse!
+    configByTenantName(tenantName: String!): ConfigResponse!
+    calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
+}
+
+type Mutation {
+    updateTenant(input: UpdateTenantInput!): Tenant!
+    updatePropertySettings(input: UpdatePropertySettingsInput!): PropertyConfig!
+    upsertRoomPrice(input: UpsertRoomPriceInput!): RoomPriceRecord!
+}
+
+input UpdateTenantInput {
+    tenantId: ID!
+    tenantName: String
+    tenantLogo: String
+    tenantBanner: String
+    tenantCopyright: String
+}
+
+input UpdatePropertySettingsInput {
+    propertyId: ID!
+    guestAllowed: Int
+    guestFlag: Boolean
+    roomCount: Int
+    lengthOfStay: Int
+    roomFlag: Boolean
+    accessibleFlag: Boolean
+}
+
+input UpsertRoomPriceInput {
+    roomTypeId: ID!
+    date: String!
+    roomPrice: Float
+    quantity: Int
+}
+
+type TenantSummary {
+    tenantId: ID!
+    tenantName: String!
+}
+
+type Tenant {
+    tenantId: ID!
+    tenantName: String!
+    tenantLogo: String
+    tenantBanner: String
+    tenantCopyright: String
+}
+
+type DailyLeastPrice {
+    date: String!
+    propertyId: ID!
+    roomTypeId: ID
+    price: Float!
+}
+
+input SearchRoomsInput {
+    tenantId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    rooms: Int!
+    accessible: Boolean
+}
+
+type RoomSearchResult {
+    roomTypeId: ID!
+    roomTypeName: String!
+    totalPrice: Float!
+    availableCount: Int!
+}
+
+type ConfigResponse {
+    tenantId: ID!
+    tenantName: String!
+    tenantLogo:String!
+    tenantBanner:String!
+    tenantCopyright:String!
+    properties: [PropertyConfig!]!
+}
+
+
+type PropertyConfig {
+    propertyId: ID!
+    propertyName: String!
+    guestAllowed: Int
+    guestFlag: Boolean
+    roomCount: Int
+    lengthOfStay: Int
+    roomFlag: Boolean
+    accessibleFlag: Boolean
+    guestTypes: [GuestType!]!
+}
+
+type GuestType {
+    guestTypeId: ID!
+    guestTypeName: String!
+    minAge: Int!
+    maxAge: Int!
+}
+
+type RoomPriceRecord {
+    priceId: ID!
+    roomTypeId: ID!
+    roomTypeName: String!
+    propertyId: ID!
+    date: String!
+    roomPrice: Float
+    quantity: Int
+}
