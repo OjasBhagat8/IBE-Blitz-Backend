@@ -8,7 +8,7 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
-    roomFilters(roomTypeId: ID!): [RoomFilter!]!
+    roomFilters(propertyId: ID!): [RoomFilter!]!
     searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }

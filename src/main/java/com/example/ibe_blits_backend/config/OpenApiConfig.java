@@ -67,10 +67,10 @@ public class OpenApiConfig {
         ));
 
         Example roomFiltersExample = new Example().value(Map.of(
-                "query", "query RoomFilters($roomTypeId: ID!) { roomFilters(roomTypeId: $roomTypeId) { filterId filterName options { optionId value } } }",
+                "query", "query RoomFilters($propertyId: ID!) { roomFilters(propertyId: $propertyId) { filterId filterName options { optionId value } } }",
                 "operationName", "RoomFilters",
                 "variables", Map.of(
-                        "roomTypeId", "5d108084-7c61-4796-9eef-c5fa6737f397"
+                        "propertyId", "b6299de0-2340-4275-a127-04d69896afb6"
                 )
         ));
 

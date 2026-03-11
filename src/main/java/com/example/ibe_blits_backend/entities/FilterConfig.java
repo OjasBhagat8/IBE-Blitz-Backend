@@ -23,9 +23,9 @@ public class FilterConfig extends BaseEntity {
     private UUID FilterConfigId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "room_type_id", nullable = false)
+    @JoinColumn(name = "property_id", nullable = false)
     @JsonIgnore
-    private RoomType roomType;
+    private Property property;
 
     @OneToMany(mappedBy = "filterConfig", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Filters> filters = new ArrayList<>();

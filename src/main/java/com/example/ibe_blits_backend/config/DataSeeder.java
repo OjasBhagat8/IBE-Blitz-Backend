@@ -165,7 +165,7 @@ public class DataSeeder implements CommandLineRunner {
         }
         priceRepository.saveAll(prices);
 
-        seedFilterConfig(roomTypes);
+        seedFilterConfig(properties);
 
         log.info("Seed complete. tenants={} properties={} roomTypes={} prices={}",
                 tenantRepository.count(),
@@ -211,10 +211,10 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    private void seedFilterConfig(List<RoomType> roomTypes) {
-        for (RoomType roomType : roomTypes) {
+    private void seedFilterConfig(List<Property> properties) {
+        for (Property property : properties) {
             FilterConfig config = filterConfigRepository.save(FilterConfig.builder()
-                    .roomType(roomType)
+                    .property(property)
                     .build());
 
             Filters amenities = Filters.builder()

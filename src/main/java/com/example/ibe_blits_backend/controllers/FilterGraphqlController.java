@@ -14,7 +14,7 @@ public class FilterGraphqlController {
     private final FilterService filterService;
 
     @QueryMapping
-    public List<RoomFilterDto> roomFilters(@Argument UUID roomTypeId) {
-        return filterService.getRoomFilters(roomTypeId);
+    public List<RoomFilterDto> roomFilters(@Argument UUID propertyId) {
+        return filterService.getPropertyFilters(propertyId);
     }
 }

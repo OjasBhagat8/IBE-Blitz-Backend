@@ -22,13 +22,13 @@ public class FilterService {
     private final FilterOptionsRepository filterOptionsRepository;
 
     @Transactional(readOnly = true)
-    public List<RoomFilterDto> getRoomFilters(UUID roomTypeId) {
-        if (roomTypeId == null) {
-            throw new IllegalArgumentException("roomTypeId is required");
+    public List<RoomFilterDto> getPropertyFilters(UUID propertyId) {
+        if (propertyId == null) {
+            throw new IllegalArgumentException("propertyId is required");
         }
 
-        FilterConfig config = filterConfigRepository.findDetailedByRoomType_RoomTypeId(roomTypeId)
-                .orElseThrow(() -> new IllegalArgumentException("filters not found for roomType"));
+        FilterConfig config = filterConfigRepository.findDetailedByProperty_PropertyId(propertyId)
+                .orElseThrow(() -> new IllegalArgumentException("filters not found for property"));
 
         List<UUID> filterIds = config.getFilters().stream()
                 .map(Filters::getFilterId)

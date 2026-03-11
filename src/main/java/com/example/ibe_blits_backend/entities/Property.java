@@ -53,4 +53,7 @@ public class Property extends BaseEntity{
 
     @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = false)
     private List<RoomType> roomTypes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "property", cascade = CascadeType.ALL, orphanRemoval = false)
+    private List<FilterConfig> filterConfigs = new ArrayList<>();
 }
