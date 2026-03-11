@@ -28,6 +28,10 @@ public class RoomType extends BaseEntity{
     @JsonIgnore
     private Property property;
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "images", columnDefinition = "jsonb")
+    private List<String> images;
+
     @Column(name = "room_type_name")
     private String roomTypeName;
 

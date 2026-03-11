@@ -98,6 +98,7 @@ public class SearchService {
                     .description(any.getRoomType().getDescription())
                     .occupancy(any.getRoomType().getOccupancy())
                     .amenities(any.getRoomType().getAmenities())
+                    .images(any.getRoomType().getImages())
                     .baseRate(any.getRoomType().getBaseRate())
                     .roomSpec(toRoomSpec(any.getRoomType().getRoomSpec()))
                     .totalPrice(total.multiply(BigDecimal.valueOf(input.getRooms())))

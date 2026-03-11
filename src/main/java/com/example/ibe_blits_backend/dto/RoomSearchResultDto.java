@@ -15,6 +15,7 @@ public class RoomSearchResultDto {
     private String description;
     private Integer occupancy;
     private List<String> amenities;
+    private List<String> images;
     private BigDecimal baseRate;
     private RoomSpecSummaryDto roomSpec;
     private BigDecimal totalPrice;

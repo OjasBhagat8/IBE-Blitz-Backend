@@ -116,6 +116,7 @@ class SearchServiceTest {
         assertEquals("Room description", results.get(0).getDescription());
         assertEquals(2, results.get(0).getOccupancy());
         assertEquals(List.of("Wifi", "Breakfast"), results.get(0).getAmenities());
+        assertEquals(List.of("image1.jpg", "image2.jpg"), results.get(0).getImages());
         assertEquals(new BigDecimal("100.00"), results.get(0).getBaseRate());
         assertEquals("King Bed", results.get(0).getRoomSpec().getBedType());
         assertEquals(new BigDecimal("320.00"), results.get(0).getRoomSpec().getArea());
@@ -196,6 +197,7 @@ class SearchServiceTest {
                 .description("Room description")
                 .occupancy(2)
                 .amenities(List.of("Wifi", "Breakfast"))
+                .images(List.of("image1.jpg", "image2.jpg"))
                 .baseRate(new BigDecimal("100.00"))
                 .roomSpec(RoomSpec.builder()
                         .roomSpecId(UUID.randomUUID())

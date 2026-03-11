@@ -78,6 +78,7 @@ type RoomSearchResult {
     description: String
     occupancy: Int
     amenities: [String!]
+    images: [String!]
     baseRate: Float
     roomSpec: RoomSpecSummary
     totalPrice: Float!
