@@ -49,6 +49,9 @@ public class RoomType extends BaseEntity{
     @JsonIgnore
     private RoomSpec roomSpec;
 
+    @OneToMany(mappedBy = "roomType", cascade = CascadeType.ALL, orphanRemoval = false)
+    private List<FilterConfig> filterConfigs = new ArrayList<>();
+
     @OneToMany(mappedBy = "roomType")
     private List<Prices> pricingList = new ArrayList<>();
 }

@@ -66,6 +66,14 @@ public class OpenApiConfig {
                 )
         ));
 
+        Example roomFiltersExample = new Example().value(Map.of(
+                "query", "query RoomFilters($roomTypeId: ID!) { roomFilters(roomTypeId: $roomTypeId) { filterId filterName options { optionId value } } }",
+                "operationName", "RoomFilters",
+                "variables", Map.of(
+                        "roomTypeId", "5d108084-7c61-4796-9eef-c5fa6737f397"
+                )
+        ));
+
         Example searchRoomsExample = new Example().value(Map.of(
                 "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { roomTypeId roomTypeName description occupancy amenities baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } }",
                 "operationName", "SearchRooms",
@@ -139,6 +147,7 @@ public class OpenApiConfig {
         graphqlExamples.put("config", configExample);
         graphqlExamples.put("configByTenantName", configByTenantNameExample);
         graphqlExamples.put("calendarPrices", calendarPricesExample);
+        graphqlExamples.put("roomFilters", roomFiltersExample);
         graphqlExamples.put("searchRooms", searchRoomsExample);
         graphqlExamples.put("prices", pricesExample);
         graphqlExamples.put("updateTenant", updateTenantExample);
