@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -71,6 +72,31 @@ public class OpenApiConfig {
                 "operationName", "RoomFilters",
                 "variables", Map.of(
                         "propertyId", "b6299de0-2340-4275-a127-04d69896afb6"
+                )
+        ));
+
+        Example filterRoomResultsExample = new Example().value(Map.of(
+                "query", "query FilterRoomResults($input: FilterRoomResultsInput!) { filterRoomResults(input: $input) { roomTypeId roomTypeName description occupancy amenities images baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } }",
+                "operationName", "FilterRoomResults",
+                "variables", Map.of(
+                        "input", Map.of(
+                                "tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd",
+                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
+                                "checkIn", "2026-04-01",
+                                "checkOut", "2026-04-03",
+                                "rooms", 2,
+                                "accessible", true,
+                                "filters", List.of(
+                                        Map.of(
+                                                "filterName", "Bed Type",
+                                                "options", List.of("King Bed", "Twin Bed")
+                                        ),
+                                        Map.of(
+                                                "filterName", "Amenities",
+                                                "options", List.of("Wifi", "Breakfast")
+                                        )
+                                )
+                        )
                 )
         ));
 
@@ -148,6 +174,7 @@ public class OpenApiConfig {
         graphqlExamples.put("configByTenantName", configByTenantNameExample);
         graphqlExamples.put("calendarPrices", calendarPricesExample);
         graphqlExamples.put("roomFilters", roomFiltersExample);
+        graphqlExamples.put("filterRoomResults", filterRoomResultsExample);
         graphqlExamples.put("searchRooms", searchRoomsExample);
         graphqlExamples.put("prices", pricesExample);
         graphqlExamples.put("updateTenant", updateTenantExample);
