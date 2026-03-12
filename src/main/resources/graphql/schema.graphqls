@@ -1,0 +1,145 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    tenants: [TenantSummary!]!
+    config(tenantId: ID!): ConfigResponse!
+    configByTenantName(tenantName: String!): ConfigResponse!
+    calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    roomFilters(propertyId: ID!): [RoomFilter!]!
+    searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
+}
+
+type Mutation {
+    updateTenant(input: UpdateTenantInput!): Tenant!
+    updatePropertySettings(input: UpdatePropertySettingsInput!): PropertyConfig!
+    upsertRoomPrice(input: UpsertRoomPriceInput!): RoomPriceRecord!
+}
+
+input UpdateTenantInput {
+    tenantId: ID!
+    tenantName: String
+    tenantLogo: String
+    tenantBanner: String
+    tenantCopyright: String
+}
+
+input UpdatePropertySettingsInput {
+    propertyId: ID!
+    guestAllowed: Int
+    guestFlag: Boolean
+    roomCount: Int
+    lengthOfStay: Int
+    roomFlag: Boolean
+    accessibleFlag: Boolean
+}
+
+input UpsertRoomPriceInput {
+    roomTypeId: ID!
+    date: String!
+    roomPrice: Float
+    quantity: Int
+}
+
+type TenantSummary {
+    tenantId: ID!
+    tenantName: String!
+}
+
+type Tenant {
+    tenantId: ID!
+    tenantName: String!
+    tenantLogo: String
+    tenantBanner: String
+    tenantCopyright: String
+}
+
+type DailyLeastPrice {
+    date: String!
+    propertyId: ID!
+    roomTypeId: ID
+    price: Float!
+}
+
+input SearchRoomsInput {
+    tenantId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    rooms: Int!
+    accessible: Boolean
+}
+
+type RoomSearchResult {
+    roomTypeId: ID!
+    roomTypeName: String!
+    description: String
+    occupancy: Int
+    amenities: [String!]
+    images: [String!]
+    baseRate: Float
+    roomSpec: RoomSpecSummary
+    totalPrice: Float!
+    availableCount: Int!
+}
+
+type RoomSpecSummary {
+    roomSpecId: ID
+    bedType: String
+    area: Float
+    minOcc: Int
+    maxOcc: Int
+}
+
+type RoomFilter {
+    filterId: ID!
+    filterName: String!
+    options: [FilterOption!]!
+}
+
+type FilterOption {
+    optionId: ID!
+    value: String!
+}
+
+type ConfigResponse {
+    tenantId: ID!
+    tenantName: String!
+    tenantLogo:String!
+    tenantBanner:String!
+    tenantCopyright:String!
+    properties: [PropertyConfig!]!
+}
+
+
+type PropertyConfig {
+    propertyId: ID!
+    propertyName: String!
+    guestAllowed: Int
+    guestFlag: Boolean
+    roomCount: Int
+    lengthOfStay: Int
+    roomFlag: Boolean
+    accessibleFlag: Boolean
+    guestTypes: [GuestType!]!
+}
+
+type GuestType {
+    guestTypeId: ID!
+    guestTypeName: String!
+    minAge: Int!
+    maxAge: Int!
+}
+
+type RoomPriceRecord {
+    priceId: ID!
+    roomTypeId: ID!
+    roomTypeName: String!
+    propertyId: ID!
+    date: String!
+    roomPrice: Float
+    quantity: Int
+}
