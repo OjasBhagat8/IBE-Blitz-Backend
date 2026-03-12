@@ -8,6 +8,7 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    roomFilters(propertyId: ID!): [RoomFilter!]!
     searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }
@@ -91,6 +92,17 @@ type RoomSpecSummary {
     area: Float
     minOcc: Int
     maxOcc: Int
+}
+
+type RoomFilter {
+    filterId: ID!
+    filterName: String!
+    options: [FilterOption!]!
+}
+
+type FilterOption {
+    optionId: ID!
+    value: String!
 }
 
 type ConfigResponse {
