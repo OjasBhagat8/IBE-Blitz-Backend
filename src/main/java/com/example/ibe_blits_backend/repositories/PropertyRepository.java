@@ -10,4 +10,6 @@ import java.util.UUID;
 public interface PropertyRepository extends JpaRepository<Property, UUID> {
     @EntityGraph(attributePaths = { "guestTypes" })
     List<Property> findByTenant_TenantId(UUID tenantId);
+
+    java.util.Optional<Property> findByPropertyIdAndTenant_TenantId(UUID propertyId, UUID tenantId);
 }

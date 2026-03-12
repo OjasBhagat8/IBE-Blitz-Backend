@@ -1,9 +1,13 @@
 package com.example.ibe_blits_backend.service;
 
 import com.example.ibe_blits_backend.dto.RoomSearchResultDto;
+import com.example.ibe_blits_backend.dto.RoomSpecSummaryDto;
 import com.example.ibe_blits_backend.dto.SearchRoomsInputDto;
 import com.example.ibe_blits_backend.entities.Prices;
+import com.example.ibe_blits_backend.entities.Property;
+import com.example.ibe_blits_backend.entities.RoomSpec;
 import com.example.ibe_blits_backend.repositories.PriceRepository;
+import com.example.ibe_blits_backend.repositories.PropertyRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,9 +21,23 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SearchService {
     private final PriceRepository priceRepository;
+    private final PropertyRepository propertyRepository;
 
     public List<RoomSearchResultDto> searchRooms(SearchRoomsInputDto input) {
         validate(input);
+        Property property = propertyRepository.findByPropertyIdAndTenant_TenantId(input.getPropertyId(), input.getTenantId())
+                .orElseThrow(() -> new IllegalArgumentException("property not found for tenant"));
+
+        long stayNights = input.getCheckIn().datesUntil(input.getCheckOut()).count();
+        if (property.getLengthOfStay() != null && stayNights > property.getLengthOfStay()) {
+            throw new IllegalArgumentException("stay exceeds property lengthOfStay");
+        }
+        if (property.getRoomCount() != null && input.getRooms() > property.getRoomCount()) {
+            throw new IllegalArgumentException("rooms exceeds property roomCount");
+        }
+        if (Boolean.TRUE.equals(input.getAccessible()) && !Boolean.TRUE.equals(property.getAccessibleFlag())) {
+            return List.of();
+        }
 
         Date from = Date.from(input.getCheckIn().atStartOfDay(ZoneId.systemDefault()).toInstant());
         Date toInclusive = Date.from(input.getCheckOut().minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -31,7 +49,6 @@ public class SearchService {
                 toInclusive
         );
 
-        long stayNights = input.getCheckIn().datesUntil(input.getCheckOut()).count();
         if (priceRows.isEmpty() || stayNights <= 0) {
             return List.of();
         }
@@ -78,6 +95,12 @@ public class SearchService {
             results.add(RoomSearchResultDto.builder()
                     .roomTypeId(entry.getKey())
                     .roomTypeName(any.getRoomType().getRoomTypeName())
+                    .description(any.getRoomType().getDescription())
+                    .occupancy(any.getRoomType().getOccupancy())
+                    .amenities(any.getRoomType().getAmenities())
+                    .images(any.getRoomType().getImages())
+                    .baseRate(any.getRoomType().getBaseRate())
+                    .roomSpec(toRoomSpec(any.getRoomType().getRoomSpec()))
                     .totalPrice(total.multiply(BigDecimal.valueOf(input.getRooms())))
                     .availableCount(minAvailable)
                     .build());
@@ -97,6 +120,19 @@ public class SearchService {
         if (input.getRooms() == null || input.getRooms() <= 0) {
             throw new IllegalArgumentException("rooms must be greater than zero");
         }
+    }
+
+    private RoomSpecSummaryDto toRoomSpec(RoomSpec roomSpec) {
+        if (roomSpec == null) {
+            return null;
+        }
+        return RoomSpecSummaryDto.builder()
+                .roomSpecId(roomSpec.getRoomSpecId())
+                .bedType(roomSpec.getBedType())
+                .area(roomSpec.getArea())
+                .minOcc(roomSpec.getMinOcc())
+                .maxOcc(roomSpec.getMaxOcc())
+                .build();
     }
 }
 

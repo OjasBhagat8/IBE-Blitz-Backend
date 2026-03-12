@@ -17,6 +17,15 @@ public interface PriceRepository extends JpaRepository<Prices, UUID> {
             Date date
     );
 
+    @Query("""
+            select p
+            from Prices p
+            join fetch p.roomType rt
+            left join fetch rt.roomSpec rs
+            where p.property.propertyId = :propertyId
+              and p.property.tenant.tenantId = :tenantId
+              and p.date between :from and :to
+            """)
     List<Prices> findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(
             UUID propertyId,
             UUID tenantId,

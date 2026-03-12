@@ -75,8 +75,22 @@ input SearchRoomsInput {
 type RoomSearchResult {
     roomTypeId: ID!
     roomTypeName: String!
+    description: String
+    occupancy: Int
+    amenities: [String!]
+    images: [String!]
+    baseRate: Float
+    roomSpec: RoomSpecSummary
     totalPrice: Float!
     availableCount: Int!
+}
+
+type RoomSpecSummary {
+    roomSpecId: ID
+    bedType: String
+    area: Float
+    minOcc: Int
+    maxOcc: Int
 }
 
 type ConfigResponse {

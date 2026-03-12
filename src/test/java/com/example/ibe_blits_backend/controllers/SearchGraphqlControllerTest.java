@@ -31,6 +31,11 @@ class SearchGraphqlControllerTest {
         RoomSearchResultDto dto = RoomSearchResultDto.builder()
                 .roomTypeId(UUID.randomUUID())
                 .roomTypeName("Suite")
+                .description("Premium suite")
+                .occupancy(3)
+                .amenities(List.of("Wifi", "Mini Bar"))
+                .images(List.of("image1.jpg", "image2.jpg"))
+                .baseRate(new BigDecimal("250.00"))
                 .totalPrice(new BigDecimal("500.00"))
                 .availableCount(3)
                 .build();

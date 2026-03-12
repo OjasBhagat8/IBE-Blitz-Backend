@@ -34,9 +34,6 @@ public class RoomSpec extends BaseEntity{
     @Column(name = "max_occ")
     private Integer maxOcc;
 
-    @Column(name = "quantity")
-    private Integer quantity;
-
     @OneToMany(mappedBy = "roomSpec")
     private List<RoomType> roomTypes = new ArrayList<>();
 }
