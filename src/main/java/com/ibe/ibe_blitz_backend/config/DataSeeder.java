@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 @Component
@@ -49,28 +50,28 @@ public class DataSeeder implements CommandLineRunner {
         private final PriceRepository priceRepository;
 
         private static final List<RoomTemplate> ROOM_TEMPLATES = List.of(new RoomTemplate("Deluxe King", "King Bed",
-                        "320.00", 1, 2, "6400", 8, "Comfort room with king bed, work desk, and walk-in shower.",
+                        "320.00", 1, 2, "64", 8, "Comfort room with king bed, work desk, and walk-in shower.",
                         List.of("Wifi", "Smart TV", "Work Desk", "Tea Coffee Maker"),
                         List.of("https://img.freepik.com/free-photo/interior-modern-comfortable-hotel-room_1232-1822.jpg?semt=ais_hybrid&w=740&q=80",
                                         "https://img.freepik.com/free-photo/interior-modern-comfortable-hotel-room_1232-1823.jpg",
                                         "https://sg.fin.co.id/wp-content/uploads/2025/08/hotel-room-interior-design-27.jpg")),
-                        new RoomTemplate("Executive Twin", "Twin Bed", "380.00", 1, 3, "7200", 6,
+                        new RoomTemplate("Executive Twin", "Twin Bed", "380.00", 1, 3, "72", 6,
                                         "Twin room for business or small family stays with extra seating space.",
                                         List.of("Wifi", "Smart TV", "Breakfast", "Mini Fridge"),
                                         List.of("https://thumbs.dreamstime.com/b/hotel-rooms-8146308.jpg",
                                                         "https://images.all-free-download.com/images/graphiclarge/gorgeous_hotel_room_picture_167661.jpg")),
-                        new RoomTemplate("Family Studio", "Queen + Twin", "450.00", 2, 4, "8600", 5,
+                        new RoomTemplate("Family Studio", "Queen + Twin", "450.00", 2, 4, "56", 5,
                                         "Open-plan studio designed for family trips with lounge corner.",
                                         List.of("Wifi", "Smart TV", "Sofa Bed", "Kitchenette"),
                                         List.of("https://media.istockphoto.com/id/627892060/photo/hotel-room-suite-with-view.jpg?s=612x612&w=0&k=20&c=YBwxnGH3MkOLLpBKCvWAD8F__T-ypznRUJ_N13Zb1cU=",
                                                         "https://i.pinimg.com/736x/6f/72/35/6f7235447ca2c37edf7df110269d363b.jpg",
                                                         "https://i.pinimg.com/originals/ee/c5/52/eec5525f6ab1b284d1143e7c93235ea1.jpg")),
-                        new RoomTemplate("Club Suite", "King Bed", "560.00", 2, 4, "10200", 4,
+                        new RoomTemplate("Club Suite", "King Bed", "560.00", 2, 4, "67", 4,
                                         "Premium suite with separate living area and club access.",
                                         List.of("Wifi", "Smart TV", "Lounge Access", "Bathtub"),
                                         List.of("https://media.istockphoto.com/id/1050564510/photo/3d-rendering-beautiful-luxury-bedroom-suite-in-hotel-with-tv.jpg?s=612x612&w=0&k=20&c=ZYEso7dgPl889aYddhY2Fj3GOyuwqliHkbbT8pjl_iM=",
                                                         "https://img.freepik.com/free-photo/3d-rendering-beautiful-comtemporary-luxury-bedroom-suite-hotel-with-tv_105762-2058.jpg?semt=ais_hybrid&w=740&q=80")),
-                        new RoomTemplate("Presidential Suite", "King Bed", "720.00", 2, 5, "14800", 2,
+                        new RoomTemplate("Presidential Suite", "King Bed", "720.00", 2, 5, "56", 2,
                                         "Top-tier suite with dining area, premium bath, and city views.",
                                         List.of("Wifi", "Smart TV", "Jacuzzi", "Butler Service"),
                                         List.of("https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSKcSG7Cr8pCtUTMSvZx89xN4fSmEWjtGkZwQ&s",
@@ -87,23 +88,23 @@ public class DataSeeder implements CommandLineRunner {
                 Tenant radison = tenantRepository.save(Tenant.builder()
                                 .tenantName("Radison")
                                 .tenantLogo("https://1000logos.net/wp-content/uploads/2020/01/Radisson-Logo.png")
-                                .tenantBanner("https://1000logos.net/wp-content/uploads/2020/01/Radisson-Logo.png")
-                                .tenantCopyright("(c) Radison")
+                                .tenantBanner("https://media.radissonhotels.net/image/uday-palace-navsari-a-member-of-radisson-individuals/pool/16256-152351-f76342066_3XL.jpg?impolicy=HomeHero")
+                                .tenantCopyright("© Radisson Group LLC. All rights reserved.")
                                 .build());
 
                 Tenant hilton = tenantRepository.save(Tenant.builder()
                                 .tenantName("Hilton")
                                 .tenantLogo("https://upload.wikimedia.org/wikipedia/commons/8/8a/Hilton_Worldwide_logo.svg")
-                                .tenantBanner("https://upload.wikimedia.org/wikipedia/commons/8/8a/Hilton_Worldwide_logo.svg")
-                                .tenantCopyright("(c) Hilton")
+                                .tenantBanner("https://thumbs.dreamstime.com/b/hilton-logo-sign-american-hotel-brand-building-business-hospitality-travel-industry-exterior-tall-house-against-401671125.jpg")
+                                .tenantCopyright("© Hilton Worldwide Holdings Inc. All rights reserved.")
                                 .build());
 
                 List<Property> properties = propertyRepository.saveAll(List.of(
-                                property("Radison Mumbai", radison, 4, true, 4, 3, false, true),
-                                property("Radison Bangalore", radison, 3, false, 5, 5, true, false),
-                                property("Radison Delhi", radison, 5, true, 3, 2, true, false),
-                                property("Hilton Delhi", hilton, 2, false, 4, 4, false, true),
-                                property("Hilton Bangalore", hilton, 6, true, 3, 1, true, true)));
+                                property("Radison Mumbai", radison, 4, true, 5, 4, false, true),
+                                property("Radison Bangalore", radison, 3, false, 4, 6, true, false),
+                                property("Radison Delhi", radison, 5, true, 3, 4, true, false),
+                                property("Hilton Delhi", hilton, 2, false, 4, 5, false, true),
+                                property("Hilton Bangalore", hilton, 6, true, 3, 3, true, true)));
 
                 Map<String, Property> propertyByName = new LinkedHashMap<>();
                 for (Property property : properties) {
@@ -147,7 +148,7 @@ public class DataSeeder implements CommandLineRunner {
                                 RoomTemplate template = ROOM_TEMPLATES.get(i);
                                 roomTypes.add(RoomType.builder()
                                                 .property(property)
-                                                .roomTypeName(property.getPropertyName() + " " + template.roomLabel())
+                                                .roomTypeName(template.roomLabel())
                                                 .description(template.description())
                                                 .occupancy(template.maxOcc())
                                                 .amenities(template.amenities())
@@ -162,13 +163,12 @@ public class DataSeeder implements CommandLineRunner {
                 List<Prices> prices = new ArrayList<>();
                 LocalDate start = LocalDate.now();
                 LocalDate end = start.plusDays(90);
+                Random random = new Random();
                 for (RoomType roomType : roomTypes) {
                         RoomTemplate template = roomTemplateFor(roomType);
                         for (LocalDate date = start; !date.isAfter(end); date = date.plusDays(1)) {
-                                int dow = date.getDayOfWeek().getValue() % 7; // Sunday=0, Monday=1 ... Saturday=6
-                                BigDecimal amount = new BigDecimal(template.basePrice())
-                                                .add(BigDecimal.valueOf((long) dow * 350L))
-                                                .setScale(2);
+                                int randomPrice = 11 + random.nextInt(59);
+                                BigDecimal amount = new BigDecimal(template.basePrice()).add(BigDecimal.valueOf(randomPrice)).setScale(2);
                                 prices.add(Prices.builder()
                                                 .roomType(roomType)
                                                 .property(roomType.getProperty())
