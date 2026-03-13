@@ -8,9 +8,8 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
-    roomFilters(propertyId: ID!): [RoomFilter!]!
-    filterRoomResults(input: FilterRoomResultsInput!): [RoomSearchResult!]!
-    searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    filterRoomResults(input: FilterRoomResultsInput!): RoomSearchResponse!
+    searchRooms(input: SearchRoomsInput!): RoomSearchResponse!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }
 
@@ -72,6 +71,8 @@ input SearchRoomsInput {
     checkOut: String!
     rooms: Int!
     accessible: Boolean
+    page: Int
+    size: Int
 }
 
 input FilterRoomResultsInput {
@@ -81,12 +82,27 @@ input FilterRoomResultsInput {
     checkOut: String!
     rooms: Int!
     accessible: Boolean
+    page: Int
+    size: Int
     filters: [SelectedFilterInput!]!
 }
 
 input SelectedFilterInput {
     filterName: String!
-    options: [String!]!
+    options: [String!]
+    minValue: Float
+    maxValue: Float
+}
+
+type RoomSearchResponse {
+    items: [RoomSearchResult!]!
+    filters: [DynamicRoomFilter!]!
+    page: Int!
+    size: Int!
+    totalItems: Int!
+    totalPages: Int!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
 }
 
 type RoomSearchResult {
@@ -102,23 +118,30 @@ type RoomSearchResult {
     availableCount: Int!
 }
 
+enum FilterType {
+    CHECKBOX
+    RANGE
+}
+
+type DynamicRoomFilter {
+    filterKey: String!
+    filterType: FilterType!
+    options: [DynamicFilterOption!]!
+    minValue: Float
+    maxValue: Float
+}
+
+type DynamicFilterOption {
+    value: String!
+    count: Int!
+}
+
 type RoomSpecSummary {
     roomSpecId: ID
     bedType: String
     area: Float
     minOcc: Int
     maxOcc: Int
-}
-
-type RoomFilter {
-    filterId: ID!
-    filterName: String!
-    options: [FilterOption!]!
-}
-
-type FilterOption {
-    optionId: ID!
-    value: String!
 }
 
 type ConfigResponse {

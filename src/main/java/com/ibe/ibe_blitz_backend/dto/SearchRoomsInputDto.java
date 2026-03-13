@@ -17,4 +17,6 @@ public class SearchRoomsInputDto {
     private LocalDate checkOut;
     private Integer rooms;
     private Boolean accessible;
+    private Integer page;
+    private Integer size;
 }

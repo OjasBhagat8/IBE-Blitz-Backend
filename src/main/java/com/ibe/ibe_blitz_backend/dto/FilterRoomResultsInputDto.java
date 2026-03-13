@@ -22,5 +22,7 @@ public class FilterRoomResultsInputDto {
     private LocalDate checkOut;
     private Integer rooms;
     private Boolean accessible;
+    private Integer page;
+    private Integer size;
     private List<SelectedFilterInputDto> filters;
 }

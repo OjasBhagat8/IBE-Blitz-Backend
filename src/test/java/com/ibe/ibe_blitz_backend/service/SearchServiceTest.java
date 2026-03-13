@@ -1,5 +1,6 @@
 package com.ibe.ibe_blitz_backend.service;
 
+import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.entities.Prices;
@@ -34,6 +35,8 @@ class SearchServiceTest {
     private PriceRepository priceRepository;
     @Mock
     private PropertyRepository propertyRepository;
+    @Mock
+    private DynamicFilterService dynamicFilterService;
 
     @InjectMocks
     private SearchService searchService;
@@ -46,7 +49,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                false
+                false,
+                null,
+                null
         );
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> searchService.searchRooms(input));
@@ -61,16 +66,20 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                false
+                false,
+                null,
+                null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 3, false)));
         when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
                 .thenReturn(List.of());
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchResponseDto results = searchService.searchRooms(input);
 
-        assertEquals(0, results.size());
+        assertEquals(0, results.getItems().size());
+        assertEquals(0, results.getPage());
+        assertEquals(3, results.getSize());
     }
 
     @Test
@@ -89,7 +98,9 @@ class SearchServiceTest {
                 checkIn,
                 checkOut,
                 2,
-                true
+                true,
+                null,
+                null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, true)));
@@ -109,21 +120,21 @@ class SearchServiceTest {
         when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
                 .thenReturn(priceRows);
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchResponseDto results = searchService.searchRooms(input);
 
-        assertEquals(2, results.size());
-        assertEquals("Deluxe", results.get(0).getRoomTypeName());
-        assertEquals("Room description", results.get(0).getDescription());
-        assertEquals(2, results.get(0).getOccupancy());
-        assertEquals(List.of("Wifi", "Breakfast"), results.get(0).getAmenities());
-        assertEquals(List.of("image1.jpg", "image2.jpg"), results.get(0).getImages());
-        assertEquals(new BigDecimal("100.00"), results.get(0).getBaseRate());
-        assertEquals("King Bed", results.get(0).getRoomSpec().getBedType());
-        assertEquals(new BigDecimal("320.00"), results.get(0).getRoomSpec().getArea());
-        assertEquals(new BigDecimal("420.00"), results.get(0).getTotalPrice());
-        assertEquals(2, results.get(0).getAvailableCount());
-        assertEquals("Suite", results.get(1).getRoomTypeName());
-        assertEquals(new BigDecimal("840.00"), results.get(1).getTotalPrice());
+        assertEquals(2, results.getItems().size());
+        assertEquals("Deluxe", results.getItems().get(0).getRoomTypeName());
+        assertEquals("Room description", results.getItems().get(0).getDescription());
+        assertEquals(2, results.getItems().get(0).getOccupancy());
+        assertEquals(List.of("Wifi", "Breakfast"), results.getItems().get(0).getAmenities());
+        assertEquals(List.of("image1.jpg", "image2.jpg"), results.getItems().get(0).getImages());
+        assertEquals(new BigDecimal("100.00"), results.getItems().get(0).getBaseRate());
+        assertEquals("King Bed", results.getItems().get(0).getRoomSpec().getBedType());
+        assertEquals(new BigDecimal("320.00"), results.getItems().get(0).getRoomSpec().getArea());
+        assertEquals(new BigDecimal("420.00"), results.getItems().get(0).getTotalPrice());
+        assertEquals(2, results.getItems().get(0).getAvailableCount());
+        assertEquals("Suite", results.getItems().get(1).getRoomTypeName());
+        assertEquals(new BigDecimal("840.00"), results.getItems().get(1).getTotalPrice());
     }
 
     @Test
@@ -134,14 +145,16 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                true
+                true,
+                null,
+                null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 3, false)));
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchResponseDto results = searchService.searchRooms(input);
 
-        assertEquals(0, results.size());
+        assertEquals(0, results.getItems().size());
     }
 
     @Test
@@ -152,7 +165,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 15),
                 1,
-                false
+                false,
+                null,
+                null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 2, false)));
@@ -170,7 +185,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 4,
-                false
+                false,
+                null,
+                null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 3, 5, false)));
@@ -178,6 +195,54 @@ class SearchServiceTest {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> searchService.searchRooms(input));
 
         assertEquals("rooms exceeds property roomCount", ex.getMessage());
+    }
+
+    @Test
+    void searchRoomsCapsRequestedPageSizeAtThree() {
+        UUID tenantId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        LocalDate checkIn = LocalDate.of(2026, 4, 1);
+        LocalDate checkOut = LocalDate.of(2026, 4, 3);
+        SearchRoomsInputDto input = new SearchRoomsInputDto(
+                tenantId,
+                propertyId,
+                checkIn,
+                checkOut,
+                1,
+                false,
+                0,
+                10
+        );
+
+        when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
+                .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, false)));
+
+        RoomType roomTypeOne = roomType(UUID.randomUUID(), "Budget");
+        RoomType roomTypeTwo = roomType(UUID.randomUUID(), "Deluxe");
+        RoomType roomTypeThree = roomType(UUID.randomUUID(), "Suite");
+        RoomType roomTypeFour = roomType(UUID.randomUUID(), "Premium");
+
+        List<Prices> priceRows = List.of(
+                priceRow(roomTypeOne, propertyId, checkIn, "100.00", 2),
+                priceRow(roomTypeOne, propertyId, checkIn.plusDays(1), "100.00", 2),
+                priceRow(roomTypeTwo, propertyId, checkIn, "120.00", 2),
+                priceRow(roomTypeTwo, propertyId, checkIn.plusDays(1), "120.00", 2),
+                priceRow(roomTypeThree, propertyId, checkIn, "140.00", 2),
+                priceRow(roomTypeThree, propertyId, checkIn.plusDays(1), "140.00", 2),
+                priceRow(roomTypeFour, propertyId, checkIn, "160.00", 2),
+                priceRow(roomTypeFour, propertyId, checkIn.plusDays(1), "160.00", 2)
+        );
+
+        when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
+                .thenReturn(priceRows);
+
+        RoomSearchResponseDto results = searchService.searchRooms(input);
+
+        assertEquals(3, results.getSize());
+        assertEquals(4, results.getTotalItems());
+        assertEquals(2, results.getTotalPages());
+        assertEquals(3, results.getItems().size());
+        assertEquals(true, results.getHasNext());
     }
 
     private static Prices priceRow(RoomType roomType, UUID propertyId, LocalDate date, String amount, int quantity) {

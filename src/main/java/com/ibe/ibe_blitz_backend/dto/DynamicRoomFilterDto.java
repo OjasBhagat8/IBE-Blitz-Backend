@@ -14,9 +14,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SelectedFilterInputDto {
-    private String filterName;
-    private List<String> options;
+public class DynamicRoomFilterDto {
+    private String filterKey;
+    private String filterType;
+    private List<DynamicFilterOptionDto> options;
     private BigDecimal minValue;
     private BigDecimal maxValue;
 }
