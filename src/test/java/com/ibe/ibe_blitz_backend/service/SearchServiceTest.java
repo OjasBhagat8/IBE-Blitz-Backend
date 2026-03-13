@@ -1,6 +1,7 @@
 package com.ibe.ibe_blitz_backend.service;
 
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSearchPageDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.entities.Prices;
 import com.ibe.ibe_blitz_backend.entities.Property;
@@ -46,7 +47,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                false
+                false,
+                0,
+                10
         );
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> searchService.searchRooms(input));
@@ -61,16 +64,19 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                false
+                false,
+                0,
+                10
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 3, false)));
         when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
                 .thenReturn(List.of());
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchPageDto results = searchService.searchRooms(input);
 
-        assertEquals(0, results.size());
+        assertEquals(0, results.getItems().size());
+        assertEquals(0, results.getTotalItems());
     }
 
     @Test
@@ -89,7 +95,9 @@ class SearchServiceTest {
                 checkIn,
                 checkOut,
                 2,
-                true
+                true,
+                0,
+                1
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, true)));
@@ -109,21 +117,23 @@ class SearchServiceTest {
         when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
                 .thenReturn(priceRows);
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchPageDto results = searchService.searchRooms(input);
 
-        assertEquals(2, results.size());
-        assertEquals("Deluxe", results.get(0).getRoomTypeName());
-        assertEquals("Room description", results.get(0).getDescription());
-        assertEquals(2, results.get(0).getOccupancy());
-        assertEquals(List.of("Wifi", "Breakfast"), results.get(0).getAmenities());
-        assertEquals(List.of("image1.jpg", "image2.jpg"), results.get(0).getImages());
-        assertEquals(new BigDecimal("100.00"), results.get(0).getBaseRate());
-        assertEquals("King Bed", results.get(0).getRoomSpec().getBedType());
-        assertEquals(new BigDecimal("320.00"), results.get(0).getRoomSpec().getArea());
-        assertEquals(new BigDecimal("420.00"), results.get(0).getTotalPrice());
-        assertEquals(2, results.get(0).getAvailableCount());
-        assertEquals("Suite", results.get(1).getRoomTypeName());
-        assertEquals(new BigDecimal("840.00"), results.get(1).getTotalPrice());
+        assertEquals(2, results.getTotalItems());
+        assertEquals(2, results.getTotalPages());
+        assertEquals(1, results.getItems().size());
+        assertEquals("Deluxe", results.getItems().get(0).getRoomTypeName());
+        assertEquals("Room description", results.getItems().get(0).getDescription());
+        assertEquals(2, results.getItems().get(0).getOccupancy());
+        assertEquals(List.of("Wifi", "Breakfast"), results.getItems().get(0).getAmenities());
+        assertEquals(List.of("image1.jpg", "image2.jpg"), results.getItems().get(0).getImages());
+        assertEquals(new BigDecimal("100.00"), results.getItems().get(0).getBaseRate());
+        assertEquals("King Bed", results.getItems().get(0).getRoomSpec().getBedType());
+        assertEquals(new BigDecimal("320.00"), results.getItems().get(0).getRoomSpec().getArea());
+        assertEquals(new BigDecimal("420.00"), results.getItems().get(0).getTotalPrice());
+        assertEquals(2, results.getItems().get(0).getAvailableCount());
+        assertEquals(true, results.getHasNext());
+        assertEquals(false, results.getHasPrevious());
     }
 
     @Test
@@ -134,14 +144,16 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 1,
-                true
+                true,
+                0,
+                10
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 3, false)));
 
-        List<RoomSearchResultDto> results = searchService.searchRooms(input);
+        RoomSearchPageDto results = searchService.searchRooms(input);
 
-        assertEquals(0, results.size());
+        assertEquals(0, results.getItems().size());
     }
 
     @Test
@@ -152,7 +164,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 15),
                 1,
-                false
+                false,
+                0,
+                10
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 5, 2, false)));
@@ -170,7 +184,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 10),
                 LocalDate.of(2026, 3, 12),
                 4,
-                false
+                false,
+                0,
+                10
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
                 .thenReturn(Optional.of(searchableProperty(input.getPropertyId(), 3, 5, false)));
@@ -179,6 +195,24 @@ class SearchServiceTest {
 
         assertEquals("rooms exceeds property roomCount", ex.getMessage());
     }
+
+    @Test
+    void searchRoomsThrowsWhenPageNegative() {
+        SearchRoomsInputDto input = new SearchRoomsInputDto(
+                UUID.randomUUID(),
+                UUID.randomUUID(),
+                LocalDate.of(2026, 3, 10),
+                LocalDate.of(2026, 3, 12),
+                1,
+                false,
+                -1,
+                10
+        );
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> searchService.searchRooms(input));
+        assertEquals("page must be zero or greater", ex.getMessage());
+    }
+    
 
     private static Prices priceRow(RoomType roomType, UUID propertyId, LocalDate date, String amount, int quantity) {
         return Prices.builder()

@@ -1,6 +1,7 @@
 package com.ibe.ibe_blitz_backend.controllers;
 
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSearchPageDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.service.SearchService;
 import org.junit.jupiter.api.Test;
@@ -39,14 +40,22 @@ class SearchGraphqlControllerTest {
                 .totalPrice(new BigDecimal("500.00"))
                 .availableCount(3)
                 .build();
+        RoomSearchPageDto page = RoomSearchPageDto.builder()
+                .items(java.util.List.of(dto))
+                .page(0)
+                .size(10)
+                .totalItems(1)
+                .totalPages(1)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
 
-        when(searchService.searchRooms(input)).thenReturn(List.of(dto));
+        when(searchService.searchRooms(input)).thenReturn(page);
 
-        List<RoomSearchResultDto> result = controller.searchRooms(input);
+        RoomSearchPageDto result = controller.searchRooms(input);
 
-        assertEquals(1, result.size());
-        assertEquals("Suite", result.get(0).getRoomTypeName());
+        assertEquals(1, result.getItems().size());
+        assertEquals("Suite", result.getItems().get(0).getRoomTypeName());
     }
 }
-
 

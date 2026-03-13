@@ -9,6 +9,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class SearchRoomsInputDto {
     private UUID tenantId;
     private UUID propertyId;
@@ -16,6 +17,8 @@ public class SearchRoomsInputDto {
     private LocalDate checkOut;
     private Integer rooms;
     private Boolean accessible;
+    private Integer page;
+    private Integer size;
 }
 
 

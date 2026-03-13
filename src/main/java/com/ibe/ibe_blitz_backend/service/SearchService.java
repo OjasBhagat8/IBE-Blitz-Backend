@@ -1,6 +1,7 @@
 package com.ibe.ibe_blitz_backend.service;
 
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSearchPageDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSpecSummaryDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.entities.Prices;
@@ -22,8 +23,11 @@ import java.util.stream.Collectors;
 public class SearchService {
     private final PriceRepository priceRepository;
     private final PropertyRepository propertyRepository;
+    private static final int DEFAULT_PAGE = 0;
+    private static final int DEFAULT_SIZE = 3;
+    private static final int MAX_SIZE = 3;
 
-    public List<RoomSearchResultDto> searchRooms(SearchRoomsInputDto input) {
+    public RoomSearchPageDto searchRooms(SearchRoomsInputDto input) {
         validate(input);
         Property property = propertyRepository.findByPropertyIdAndTenant_TenantId(input.getPropertyId(), input.getTenantId())
                 .orElseThrow(() -> new IllegalArgumentException("property not found for tenant"));
@@ -36,7 +40,7 @@ public class SearchService {
             throw new IllegalArgumentException("rooms exceeds property roomCount");
         }
         if (Boolean.TRUE.equals(input.getAccessible()) && !Boolean.TRUE.equals(property.getAccessibleFlag())) {
-            return List.of();
+            return emptyPage(input);
         }
 
         Date from = Date.from(input.getCheckIn().atStartOfDay(ZoneId.systemDefault()).toInstant());
@@ -50,7 +54,7 @@ public class SearchService {
         );
 
         if (priceRows.isEmpty() || stayNights <= 0) {
-            return List.of();
+            return emptyPage(input);
         }
 
         Map<UUID, List<Prices>> groupedByRoomType = priceRows.stream()
@@ -107,7 +111,7 @@ public class SearchService {
         }
 
         results.sort(Comparator.comparing(RoomSearchResultDto::getTotalPrice));
-        return results;
+        return paginate(results, input);
     }
 
     private void validate(SearchRoomsInputDto input) {
@@ -120,6 +124,45 @@ public class SearchService {
         if (input.getRooms() == null || input.getRooms() <= 0) {
             throw new IllegalArgumentException("rooms must be greater than zero");
         }
+        if (input.getPage() != null && input.getPage() < 0) {
+            throw new IllegalArgumentException("page must be zero or greater");
+        }
+        if (input.getSize() != null && input.getSize() <= 0) {
+            throw new IllegalArgumentException("size must be greater than zero");
+        }
+    }
+
+    private RoomSearchPageDto paginate(List<RoomSearchResultDto> results, SearchRoomsInputDto input) {
+        int page = input.getPage() == null ? DEFAULT_PAGE : input.getPage();
+        int size = input.getSize() == null ? DEFAULT_SIZE : Math.min(input.getSize(), MAX_SIZE);
+        int totalItems = results.size();
+        int totalPages = totalItems == 0 ? 0 : (int) Math.ceil((double) totalItems / size);
+        int fromIndex = Math.min(page * size, totalItems);
+        int toIndex = Math.min(fromIndex + size, totalItems);
+
+        return RoomSearchPageDto.builder()
+                .items(results.subList(fromIndex, toIndex))
+                .page(page)
+                .size(size)
+                .totalItems(totalItems)
+                .totalPages(totalPages)
+                .hasNext(page + 1 < totalPages)
+                .hasPrevious(page > 0 && totalPages > 0)
+                .build();
+    }
+
+    private RoomSearchPageDto emptyPage(SearchRoomsInputDto input) {
+        int page = input.getPage() == null ? DEFAULT_PAGE : input.getPage();
+        int size = input.getSize() == null ? DEFAULT_SIZE : Math.min(input.getSize(), MAX_SIZE);
+        return RoomSearchPageDto.builder()
+                .items(List.of())
+                .page(page)
+                .size(size)
+                .totalItems(0)
+                .totalPages(0)
+                .hasNext(false)
+                .hasPrevious(false)
+                .build();
     }
 
     private RoomSpecSummaryDto toRoomSpec(RoomSpec roomSpec) {

@@ -75,7 +75,7 @@ public class OpenApiConfig {
         ));
 
         Example searchRoomsExample = new Example().value(Map.of(
-                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { roomTypeId roomTypeName description occupancy amenities baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } }",
+                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { items { roomTypeId roomTypeName description occupancy amenities baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } page size totalItems totalPages hasNext hasPrevious } }",
                 "operationName", "SearchRooms",
                 "variables", Map.of(
                         "input", Map.of(
@@ -84,7 +84,9 @@ public class OpenApiConfig {
                                 "checkIn", "2026-04-01",
                                 "checkOut", "2026-04-03",
                                 "rooms", 2,
-                                "accessible", true
+                                "accessible", true,
+                                "page", 0,
+                                "size", 3
                         )
                 )
         ));
