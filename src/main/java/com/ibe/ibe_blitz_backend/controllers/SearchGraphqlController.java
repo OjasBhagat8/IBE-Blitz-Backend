@@ -5,6 +5,7 @@ import com.ibe.ibe_blitz_backend.dto.PromotionDealResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomDealsRequestDto;
 import com.ibe.ibe_blitz_backend.dto.RoomDealsResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.service.PromoCodeService;
 import com.ibe.ibe_blitz_backend.service.RoomDealsService;
@@ -14,8 +15,6 @@ import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 
-import java.util.List;
-
 @Controller
 @RequiredArgsConstructor
 public class SearchGraphqlController {
@@ -24,7 +23,7 @@ public class SearchGraphqlController {
     private final PromoCodeService promoCodeService;
 
     @QueryMapping
-    public List<RoomSearchResultDto> searchRooms(@Argument SearchRoomsInputDto input) {
+    public RoomSearchResponseDto searchRooms(@Argument SearchRoomsInputDto input) {
         return searchService.searchRooms(input);
     }
 

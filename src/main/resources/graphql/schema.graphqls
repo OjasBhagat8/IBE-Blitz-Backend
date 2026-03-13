@@ -7,9 +7,9 @@ type Query {
     tenants: [TenantSummary!]!
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
-    calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
+    calendarPrices(tenantId: ID!, propertyId: ID!, startDate: String): [DailyLeastPrice!]!
     roomFilters(propertyId: ID!): [RoomFilter!]!
-    searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    searchRooms(input: SearchRoomsInput!): RoomSearchResponse!
     roomDeals(input: RoomDealsInput!): RoomDeals!
     applyPromoCode(input: PromoCodeApplyInput!): PromotionDeal!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
@@ -73,6 +73,41 @@ input SearchRoomsInput {
     checkOut: String!
     rooms: Int!
     accessible: Boolean
+    page: Int
+    size: Int
+    filters: [SelectedFilterInput!]
+    sortBy: RoomSortBy
+    sortDirection: SortDirection
+}
+
+enum RoomSortBy {
+    TOTAL_PRICE
+    OCCUPANCY
+    AREA
+    AVAILABLE_COUNT
+}
+
+enum SortDirection {
+    ASC
+    DESC
+}
+
+input SelectedFilterInput {
+    filterName: String!
+    options: [String!]
+    minValue: Float
+    maxValue: Float
+}
+
+type RoomSearchResponse {
+    items: [RoomSearchResult!]!
+    filters: [DynamicRoomFilter!]!
+    page: Int!
+    size: Int!
+    totalItems: Int!
+    totalPages: Int!
+    hasNext: Boolean!
+    hasPrevious: Boolean!
 }
 
 input RoomDealsInput {
@@ -130,6 +165,22 @@ type PromotionDeal {
 type RoomDeals {
     standardRate: StandardRate!
     deals: [PromotionDeal!]!
+enum FilterType {
+    CHECKBOX
+    RANGE
+}
+
+type DynamicRoomFilter {
+    filterKey: String!
+    filterType: FilterType!
+    options: [DynamicFilterOption!]!
+    minValue: Float
+    maxValue: Float
+}
+
+type DynamicFilterOption {
+    value: String!
+    count: Int!
 }
 
 type RoomSpecSummary {
@@ -140,26 +191,14 @@ type RoomSpecSummary {
     maxOcc: Int
 }
 
-type RoomFilter {
-    filterId: ID!
-    filterName: String!
-    options: [FilterOption!]!
-}
-
-type FilterOption {
-    optionId: ID!
-    value: String!
-}
-
 type ConfigResponse {
     tenantId: ID!
     tenantName: String!
-    tenantLogo:String!
-    tenantBanner:String!
-    tenantCopyright:String!
+    tenantLogo: String!
+    tenantBanner: String!
+    tenantCopyright: String!
     properties: [PropertyConfig!]!
 }
-
 
 type PropertyConfig {
     propertyId: ID!
