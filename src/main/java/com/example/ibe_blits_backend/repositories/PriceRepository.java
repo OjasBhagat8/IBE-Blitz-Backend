@@ -3,6 +3,7 @@ package com.example.ibe_blits_backend.repositories;
 import com.example.ibe_blits_backend.entities.Prices;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Date;
 import java.util.List;
@@ -27,5 +28,24 @@ public interface PriceRepository extends JpaRepository<Prices, UUID> {
     Optional<Prices> findFirstByRoomType_RoomTypeIdAndDate(UUID roomTypeId, Date date);
 
     @Query("select p from Prices p join fetch p.roomType rt where p.property.propertyId = :propertyId and p.date between :from and :to order by p.date asc")
-    List<Prices> findByProperty_PropertyIdAndDateBetweenOrderByDateAsc(UUID propertyId, Date from, Date to);
+    List<Prices> findByProperty_PropertyIdAndDateBetweenOrderByDateAsc(
+            @Param("propertyId") UUID propertyId,
+            @Param("from") Date from,
+            @Param("to") Date to
+    );
+
+    @Query("""
+            select p from Prices p
+            join fetch p.roomType rt
+            where p.property.propertyId = :propertyId
+              and rt.roomTypeId = :roomTypeId
+              and p.date between :from and :to
+            order by p.date asc
+            """)
+    List<Prices> findByPropertyIdAndRoomTypeIdAndDateBetweenOrderByDateAsc(
+            @Param("propertyId") UUID propertyId,
+            @Param("roomTypeId") UUID roomTypeId,
+            @Param("from") Date from,
+            @Param("to") Date to
+    );
 }

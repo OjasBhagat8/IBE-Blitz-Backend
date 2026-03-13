@@ -9,6 +9,8 @@ type Query {
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
     searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    roomPricingOptions(input: RoomPricingInput!): RoomPricingOptions!
+    applyPromoCode(input: PromoCodeApplyInput!): PromotionDeal!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }
 
@@ -72,11 +74,55 @@ input SearchRoomsInput {
     accessible: Boolean
 }
 
+input RoomPricingInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+}
+
+input PromoCodeApplyInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+    promoCode: String!
+}
+
+input GuestSelectionInput {
+    guestTypeName: String!
+    count: Int!
+}
+
 type RoomSearchResult {
     roomTypeId: ID!
     roomTypeName: String!
     totalPrice: Float!
     availableCount: Int!
+}
+
+type StandardRate {
+    title: String!
+    description: String!
+    totalPrice: Float!
+}
+
+type PromotionDeal {
+    promotionId: ID!
+    promoCodeId: ID
+    title: String!
+    description: String
+    totalPrice: Float!
+    originalPrice: Float!
+    discountAmount: Float!
+    promotionType: String!
+}
+
+type RoomPricingOptions {
+    standardRate: StandardRate!
+    deals: [PromotionDeal!]!
 }
 
 type ConfigResponse {

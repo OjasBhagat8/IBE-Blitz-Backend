@@ -5,6 +5,16 @@ import com.example.ibe_blits_backend.entities.FilterOptions;
 import com.example.ibe_blits_backend.entities.Filters;
 import com.example.ibe_blits_backend.entities.GuestType;
 import com.example.ibe_blits_backend.entities.Prices;
+import com.example.ibe_blits_backend.entities.PromoCode;
+import com.example.ibe_blits_backend.entities.Promotion;
+import com.example.ibe_blits_backend.entities.PromotionApplyTo;
+import com.example.ibe_blits_backend.entities.PromotionCondition;
+import com.example.ibe_blits_backend.entities.PromotionConditionOperator;
+import com.example.ibe_blits_backend.entities.PromotionConditionType;
+import com.example.ibe_blits_backend.entities.PromotionKind;
+import com.example.ibe_blits_backend.entities.PromotionReward;
+import com.example.ibe_blits_backend.entities.PromotionRewardType;
+import com.example.ibe_blits_backend.entities.PromotionRoomType;
 import com.example.ibe_blits_backend.entities.Property;
 import com.example.ibe_blits_backend.entities.RoomSpec;
 import com.example.ibe_blits_backend.entities.RoomType;
@@ -15,6 +25,7 @@ import com.example.ibe_blits_backend.repositories.FiltersRepository;
 import com.example.ibe_blits_backend.repositories.GuestTypeRepository;
 import com.example.ibe_blits_backend.repositories.PriceRepository;
 import com.example.ibe_blits_backend.repositories.PropertyRepository;
+import com.example.ibe_blits_backend.repositories.PromotionRepository;
 import com.example.ibe_blits_backend.repositories.RoomSpecRepository;
 import com.example.ibe_blits_backend.repositories.RoomTypeRepository;
 import com.example.ibe_blits_backend.repositories.TenantRepository;
@@ -28,6 +39,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -48,6 +60,7 @@ public class DataSeeder implements CommandLineRunner {
     private final FiltersRepository filtersRepository;
     private final FilterOptionsRepository filterOptionsRepository;
     private final PriceRepository priceRepository;
+    private final PromotionRepository promotionRepository;
 
     @Override
     @Transactional
@@ -144,6 +157,7 @@ public class DataSeeder implements CommandLineRunner {
             }
         }
         priceRepository.saveAll(prices);
+        seedPromotions(roomTypes);
 
         seedFilterConfig(properties);
 
@@ -214,6 +228,173 @@ public class DataSeeder implements CommandLineRunner {
                     FilterOptions.builder().filter(view).value("Sea").build()
             ));
         }
+    }
+
+    private void seedPromotions(List<RoomType> roomTypes) {
+        List<Promotion> promotions = new ArrayList<>();
+        for (RoomType roomType : roomTypes) {
+            promotions.add(buildPromotion(
+                    roomType,
+                    "Weekend Offer",
+                    "Stay over Saturday or Sunday and save 10% on the full stay.",
+                    PromotionConditionType.TRIP_INCLUDES_DAY,
+                    PromotionConditionOperator.IN,
+                    null,
+                    "[\"SATURDAY\",\"SUNDAY\"]",
+                    PromotionRewardType.PERCENTAGE_DISCOUNT,
+                    PromotionApplyTo.STAY_TOTAL,
+                    null,
+                    new BigDecimal("10.00")
+            ));
+            promotions.add(buildPromotion(
+                    roomType,
+                    "Long Weekend Offer",
+                    "Stay across Friday, Saturday and Sunday to get 15% off the full stay.",
+                    PromotionConditionType.TRIP_INCLUDES_ALL_DAYS,
+                    PromotionConditionOperator.ALL,
+                    null,
+                    "[\"FRIDAY\",\"SATURDAY\",\"SUNDAY\"]",
+                    PromotionRewardType.PERCENTAGE_DISCOUNT,
+                    PromotionApplyTo.STAY_TOTAL,
+                    null,
+                    new BigDecimal("15.00")
+            ));
+            promotions.add(buildPromotion(
+                    roomType,
+                    "Three Night Escape",
+                    "Book at least three nights and get 500 off per night.",
+                    PromotionConditionType.MIN_STAY_NIGHTS,
+                    PromotionConditionOperator.GREATER_THAN_OR_EQUAL,
+                    new BigDecimal("3"),
+                    null,
+                    PromotionRewardType.FLAT_DISCOUNT,
+                    PromotionApplyTo.PER_NIGHT,
+                    new BigDecimal("500.00"),
+                    null
+            ));
+            promotions.add(buildPromotion(
+                    roomType,
+                    "Family Saver",
+                    "Two or more guests get a 750 flat discount on the stay total.",
+                    PromotionConditionType.MIN_GUEST_COUNT,
+                    PromotionConditionOperator.GREATER_THAN_OR_EQUAL,
+                    new BigDecimal("2"),
+                    null,
+                    PromotionRewardType.FLAT_DISCOUNT,
+                    PromotionApplyTo.STAY_TOTAL,
+                    new BigDecimal("750.00"),
+                    null
+            ));
+
+            if (roomType.getProperty().getPropertyName().contains("Hilton")) {
+                promotions.add(buildPromotion(
+                        roomType,
+                        "Senior Citizen Discount",
+                        "Selected Senior Citizen guest type gets 12% off the stay total.",
+                        PromotionConditionType.GUEST_TYPE_SELECTED,
+                        PromotionConditionOperator.IN,
+                        null,
+                        "[\"Senior Citizen\"]",
+                        PromotionRewardType.PERCENTAGE_DISCOUNT,
+                        PromotionApplyTo.STAY_TOTAL,
+                        null,
+                        new BigDecimal("12.00")
+                ));
+            }
+        }
+
+        if (!roomTypes.isEmpty()) {
+            promotions.add(buildPromoCodePromotion(roomTypes.get(0)));
+        }
+        promotionRepository.saveAll(promotions);
+    }
+
+    private Promotion buildPromotion(
+            RoomType roomType,
+            String name,
+            String description,
+            PromotionConditionType conditionType,
+            PromotionConditionOperator conditionOperator,
+            BigDecimal valueNumber,
+            String valueJson,
+            PromotionRewardType rewardType,
+            PromotionApplyTo applyTo,
+            BigDecimal amount,
+            BigDecimal percentage
+    ) {
+        Promotion promotion = Promotion.builder()
+                .property(roomType.getProperty())
+                .promotionName(name)
+                .description(description)
+                .promotionKind(PromotionKind.AUTOMATIC)
+                .active(Boolean.TRUE)
+                .startDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(90))
+                .build();
+
+        PromotionCondition condition = PromotionCondition.builder()
+                .promotion(promotion)
+                .conditionType(conditionType)
+                .conditionOperator(conditionOperator)
+                .valueNumber(valueNumber)
+                .valueJson(valueJson)
+                .build();
+
+        PromotionReward reward = PromotionReward.builder()
+                .promotion(promotion)
+                .rewardType(rewardType)
+                .applyTo(applyTo)
+                .amount(amount)
+                .percentage(percentage)
+                .build();
+
+        PromotionRoomType mapping = PromotionRoomType.builder()
+                .promotion(promotion)
+                .roomType(roomType)
+                .build();
+
+        promotion.setCondition(condition);
+        promotion.setReward(reward);
+        promotion.setRoomTypes(List.of(mapping));
+        return promotion;
+    }
+
+    private Promotion buildPromoCodePromotion(RoomType roomType) {
+        Promotion promotion = Promotion.builder()
+                .property(roomType.getProperty())
+                .promotionName("Promo Code Special")
+                .description("Apply code SAVE10 for extra savings.")
+                .promotionKind(PromotionKind.PROMO_CODE)
+                .active(Boolean.TRUE)
+                .startDate(LocalDate.now().minusDays(1))
+                .endDate(LocalDate.now().plusDays(90))
+                .build();
+
+        PromotionReward reward = PromotionReward.builder()
+                .promotion(promotion)
+                .rewardType(PromotionRewardType.PERCENTAGE_DISCOUNT)
+                .applyTo(PromotionApplyTo.STAY_TOTAL)
+                .percentage(new BigDecimal("10.00"))
+                .build();
+
+        PromotionRoomType mapping = PromotionRoomType.builder()
+                .promotion(promotion)
+                .roomType(roomType)
+                .build();
+
+        PromoCode promoCode = PromoCode.builder()
+                .promotion(promotion)
+                .code("SAVE10")
+                .maxUsage(100)
+                .perUserLimit(2)
+                .expiryDate(LocalDateTime.now().plusDays(90))
+                .active(Boolean.TRUE)
+                .build();
+
+        promotion.setReward(reward);
+        promotion.setRoomTypes(List.of(mapping));
+        promotion.setPromoCodes(List.of(promoCode));
+        return promotion;
     }
 
     private record GuestTypeDef(String name, Integer minAge, Integer maxAge) {
