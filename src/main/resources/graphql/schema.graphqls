@@ -8,7 +8,10 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate: String): [DailyLeastPrice!]!
+    roomFilters(propertyId: ID!): [RoomFilter!]!
     searchRooms(input: SearchRoomsInput!): RoomSearchResponse!
+    roomDeals(input: RoomDealsInput!): RoomDeals!
+    applyPromoCode(input: PromoCodeApplyInput!): PromotionDeal!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }
 
@@ -107,6 +110,28 @@ type RoomSearchResponse {
     hasPrevious: Boolean!
 }
 
+input RoomDealsInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+}
+
+input PromoCodeApplyInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+    promoCode: String!
+}
+
+input GuestSelectionInput {
+    guestTypeName: String!
+    count: Int!
+}
+
 type RoomSearchResult {
     roomTypeId: ID!
     roomTypeName: String!
@@ -120,6 +145,26 @@ type RoomSearchResult {
     availableCount: Int!
 }
 
+type StandardRate {
+    title: String!
+    description: String!
+    totalPrice: Float!
+}
+
+type PromotionDeal {
+    promotionId: ID!
+    promoCodeId: ID
+    title: String!
+    description: String
+    totalPrice: Float!
+    originalPrice: Float!
+    discountAmount: Float!
+    promotionType: String!
+}
+
+type RoomDeals {
+    standardRate: StandardRate!
+    deals: [PromotionDeal!]!
 enum FilterType {
     CHECKBOX
     RANGE
