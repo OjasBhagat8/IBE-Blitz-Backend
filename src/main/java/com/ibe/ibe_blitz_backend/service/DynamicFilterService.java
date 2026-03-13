@@ -127,10 +127,6 @@ public class DynamicFilterService {
                 .filter(value -> !value.isEmpty())
                 .collect(Collectors.groupingBy(Function.identity(), LinkedHashMap::new, Collectors.counting()));
 
-        if (counts.isEmpty()) {
-            return;
-        }
-
         List<DynamicFilterOptionDto> options = counts.entrySet().stream()
                 .sorted(Map.Entry.comparingByKey(String.CASE_INSENSITIVE_ORDER))
                 .map(entry -> DynamicFilterOptionDto.builder()
@@ -157,12 +153,8 @@ public class DynamicFilterService {
                 .filter(Objects::nonNull)
                 .toList();
 
-        if (values.isEmpty()) {
-            return;
-        }
-
-        BigDecimal minValue = values.stream().min(Comparator.naturalOrder()).orElse(null);
-        BigDecimal maxValue = values.stream().max(Comparator.naturalOrder()).orElse(null);
+        BigDecimal minValue = values.isEmpty() ? null : values.stream().min(Comparator.naturalOrder()).orElse(null);
+        BigDecimal maxValue = values.isEmpty() ? null : values.stream().max(Comparator.naturalOrder()).orElse(null);
 
         filters.add(DynamicRoomFilterDto.builder()
                 .filterKey(filterKey)

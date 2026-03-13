@@ -7,6 +7,7 @@ import com.ibe.ibe_blitz_backend.dto.RoomSpecSummaryDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.dto.SelectedFilterInputDto;
 import com.ibe.ibe_blitz_backend.dto.SortDirection;
+import com.ibe.ibe_blitz_backend.dto.DynamicRoomFilterDto;
 import com.ibe.ibe_blitz_backend.entities.Prices;
 import com.ibe.ibe_blitz_backend.entities.Property;
 import com.ibe.ibe_blitz_backend.entities.RoomSpec;
@@ -69,14 +70,16 @@ public class SearchService {
             return emptyPage(input);
         }
 
-        List<RoomSearchResultDto> rooms = buildAvailableRooms(input, stayNights, priceRows);
-        rooms = dynamicFilterService.applyFilters(rooms, defaultFilters(input));
+        List<RoomSearchResultDto> availableRooms = buildAvailableRooms(input, stayNights, priceRows);
+        List<DynamicRoomFilterDto> filters = dynamicFilterService.buildFilters(availableRooms);
+
+        List<RoomSearchResultDto> rooms = dynamicFilterService.applyFilters(availableRooms, defaultFilters(input));
 
         RoomSortBy sortBy = input.getSortBy() == null ? DEFAULT_SORT_BY : input.getSortBy();
         SortDirection sortDirection = input.getSortDirection() == null ? DEFAULT_SORT_DIRECTION : input.getSortDirection();
         rooms = sortRooms(rooms, sortBy, sortDirection);
 
-        return paginate(rooms, input);
+        return paginate(rooms, filters, input);
     }
 
     public List<RoomSearchResultDto> sortRooms(List<RoomSearchResultDto> results, RoomSortBy sortBy, SortDirection sortDirection) {
@@ -178,7 +181,7 @@ public class SearchService {
         return results;
     }
 
-    private RoomSearchResponseDto paginate(List<RoomSearchResultDto> results, SearchRoomsInputDto input) {
+    private RoomSearchResponseDto paginate(List<RoomSearchResultDto> results, List<DynamicRoomFilterDto> filters, SearchRoomsInputDto input) {
         int page = input.getPage() == null ? DEFAULT_PAGE : input.getPage();
         int size = input.getSize() == null ? DEFAULT_SIZE : Math.min(input.getSize(), MAX_SIZE);
         int totalItems = results.size();
@@ -188,7 +191,7 @@ public class SearchService {
 
         return RoomSearchResponseDto.builder()
                 .items(results.subList(fromIndex, toIndex))
-                .filters(dynamicFilterService.buildFilters(results))
+                .filters(filters)
                 .page(page)
                 .size(size)
                 .totalItems(totalItems)

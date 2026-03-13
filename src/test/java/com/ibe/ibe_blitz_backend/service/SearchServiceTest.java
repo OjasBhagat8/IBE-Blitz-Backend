@@ -1,5 +1,6 @@
 package com.ibe.ibe_blitz_backend.service;
 
+import com.ibe.ibe_blitz_backend.dto.DynamicRoomFilterDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSortBy;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.verify;
 
@@ -359,6 +361,54 @@ class SearchServiceTest {
 
         assertEquals(1, results.getItems().size());
         verify(dynamicFilterService).applyFilters(anyList(), anyList());
+    }
+
+    @Test
+    void searchRoomsKeepsFiltersWhenSelectedFiltersProduceNoRooms() {
+        UUID tenantId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        LocalDate checkIn = LocalDate.of(2026, 4, 1);
+        LocalDate checkOut = LocalDate.of(2026, 4, 3);
+        SearchRoomsInputDto input = SearchRoomsInputDto.builder()
+                .tenantId(tenantId)
+                .propertyId(propertyId)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .rooms(1)
+                .filters(List.of(SelectedFilterInputDto.builder()
+                        .filterName("area")
+                        .minValue(new BigDecimal("400"))
+                        .maxValue(new BigDecimal("400"))
+                        .build()))
+                .build();
+
+        when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
+                .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, false)));
+
+        RoomType roomType = roomType(UUID.randomUUID(), "Deluxe", "King Bed", "320.00");
+        List<Prices> priceRows = List.of(
+                priceRow(roomType, propertyId, checkIn, "100.00", 2),
+                priceRow(roomType, propertyId, checkIn.plusDays(1), "100.00", 2)
+        );
+        when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
+                .thenReturn(priceRows);
+
+        when(dynamicFilterService.buildFilters(anyList())).thenReturn(List.of(
+                DynamicRoomFilterDto.builder()
+                        .filterKey("area")
+                        .filterType("RANGE")
+                        .options(List.of())
+                        .minValue(new BigDecimal("320"))
+                        .maxValue(new BigDecimal("320"))
+                        .build()
+        ));
+        when(dynamicFilterService.applyFilters(anyList(), eq(input.getFilters()))).thenReturn(List.of());
+
+        RoomSearchResponseDto results = searchService.searchRooms(input);
+
+        assertEquals(0, results.getItems().size());
+        assertEquals(1, results.getFilters().size());
+        verify(dynamicFilterService).buildFilters(anyList());
     }
 
     private static Prices priceRow(RoomType roomType, UUID propertyId, LocalDate date, String amount, int quantity) {
