@@ -2,13 +2,17 @@ package com.ibe.ibe_blitz_backend.service;
 
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSortBy;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
+import com.ibe.ibe_blitz_backend.dto.SelectedFilterInputDto;
+import com.ibe.ibe_blitz_backend.dto.SortDirection;
 import com.ibe.ibe_blitz_backend.entities.Prices;
 import com.ibe.ibe_blitz_backend.entities.Property;
 import com.ibe.ibe_blitz_backend.entities.RoomSpec;
 import com.ibe.ibe_blitz_backend.entities.RoomType;
 import com.ibe.ibe_blitz_backend.repositories.PriceRepository;
 import com.ibe.ibe_blitz_backend.repositories.PropertyRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,8 +29,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class SearchServiceTest {
@@ -41,6 +48,13 @@ class SearchServiceTest {
     @InjectMocks
     private SearchService searchService;
 
+    @BeforeEach
+    void setUp() {
+        lenient().when(dynamicFilterService.buildFilters(anyList())).thenReturn(List.of());
+        lenient().when(dynamicFilterService.applyFilters(anyList(), anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
     @Test
     void searchRoomsThrowsWhenTenantMissing() {
         SearchRoomsInputDto input = new SearchRoomsInputDto(
@@ -50,6 +64,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 12),
                 1,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -67,6 +84,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 12),
                 1,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -99,6 +119,9 @@ class SearchServiceTest {
                 checkOut,
                 2,
                 true,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -147,6 +170,9 @@ class SearchServiceTest {
                 1,
                 true,
                 null,
+                null,
+                null,
+                null,
                 null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
@@ -167,6 +193,9 @@ class SearchServiceTest {
                 1,
                 false,
                 null,
+                null,
+                null,
+                null,
                 null
         );
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
@@ -186,6 +215,9 @@ class SearchServiceTest {
                 LocalDate.of(2026, 3, 12),
                 4,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -211,7 +243,10 @@ class SearchServiceTest {
                 1,
                 false,
                 0,
-                10
+                10,
+                null,
+                null,
+                null
         );
 
         when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
@@ -245,6 +280,87 @@ class SearchServiceTest {
         assertEquals(true, results.getHasNext());
     }
 
+    @Test
+    void searchRoomsAppliesOptionalFiltersAndSortingInSingleApi() {
+        UUID tenantId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        LocalDate checkIn = LocalDate.of(2026, 4, 1);
+        LocalDate checkOut = LocalDate.of(2026, 4, 3);
+        SearchRoomsInputDto input = SearchRoomsInputDto.builder()
+                .tenantId(tenantId)
+                .propertyId(propertyId)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .rooms(1)
+                .page(0)
+                .size(3)
+                .filters(List.of(SelectedFilterInputDto.builder()
+                        .filterName("bedType")
+                        .options(List.of("King Bed"))
+                        .build()))
+                .sortBy(RoomSortBy.AREA)
+                .sortDirection(SortDirection.DESC)
+                .build();
+
+        when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
+                .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, false)));
+
+        RoomType kingLarge = roomType(UUID.randomUUID(), "King Large", "King Bed", "420.00");
+        RoomType kingSmall = roomType(UUID.randomUUID(), "King Small", "King Bed", "300.00");
+        RoomType twinRoom = roomType(UUID.randomUUID(), "Twin", "Twin Bed", "380.00");
+
+        List<Prices> priceRows = List.of(
+                priceRow(kingLarge, propertyId, checkIn, "200.00", 2),
+                priceRow(kingLarge, propertyId, checkIn.plusDays(1), "200.00", 2),
+                priceRow(kingSmall, propertyId, checkIn, "180.00", 2),
+                priceRow(kingSmall, propertyId, checkIn.plusDays(1), "180.00", 2),
+                priceRow(twinRoom, propertyId, checkIn, "150.00", 2),
+                priceRow(twinRoom, propertyId, checkIn.plusDays(1), "150.00", 2)
+        );
+
+        when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
+                .thenReturn(priceRows);
+        when(dynamicFilterService.applyFilters(anyList(), anyList()))
+                .thenAnswer(invocation -> ((List<RoomSearchResultDto>) invocation.getArgument(0)).stream()
+                        .filter(room -> room.getRoomSpec() != null && "King Bed".equals(room.getRoomSpec().getBedType()))
+                        .toList());
+
+        RoomSearchResponseDto results = searchService.searchRooms(input);
+
+        assertEquals(2, results.getItems().size());
+        assertEquals("King Large", results.getItems().get(0).getRoomTypeName());
+        assertEquals("King Small", results.getItems().get(1).getRoomTypeName());
+    }
+
+    @Test
+    void searchRoomsUsesDefaultEmptyFiltersWhenFiltersAreMissing() {
+        UUID tenantId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        LocalDate checkIn = LocalDate.of(2026, 4, 1);
+        LocalDate checkOut = LocalDate.of(2026, 4, 3);
+        SearchRoomsInputDto input = SearchRoomsInputDto.builder()
+                .tenantId(tenantId)
+                .propertyId(propertyId)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .rooms(1)
+                .build();
+
+        when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
+                .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, false)));
+
+        RoomType roomType = roomType(UUID.randomUUID(), "Deluxe");
+        when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
+                .thenReturn(List.of(
+                        priceRow(roomType, propertyId, checkIn, "100.00", 2),
+                        priceRow(roomType, propertyId, checkIn.plusDays(1), "100.00", 2)
+                ));
+        RoomSearchResponseDto results = searchService.searchRooms(input);
+
+        assertEquals(1, results.getItems().size());
+        verify(dynamicFilterService).applyFilters(anyList(), anyList());
+    }
+
     private static Prices priceRow(RoomType roomType, UUID propertyId, LocalDate date, String amount, int quantity) {
         return Prices.builder()
                 .roomType(roomType)
@@ -256,6 +372,10 @@ class SearchServiceTest {
     }
 
     private static RoomType roomType(UUID id, String name) {
+        return roomType(id, name, "King Bed", "320.00");
+    }
+
+    private static RoomType roomType(UUID id, String name, String bedType, String area) {
         return RoomType.builder()
                 .roomTypeId(id)
                 .roomTypeName(name)
@@ -266,8 +386,8 @@ class SearchServiceTest {
                 .baseRate(new BigDecimal("100.00"))
                 .roomSpec(RoomSpec.builder()
                         .roomSpecId(UUID.randomUUID())
-                        .bedType("King Bed")
-                        .area(new BigDecimal("320.00"))
+                        .bedType(bedType)
+                        .area(new BigDecimal(area))
                         .minOcc(1)
                         .maxOcc(2)
                         .build())

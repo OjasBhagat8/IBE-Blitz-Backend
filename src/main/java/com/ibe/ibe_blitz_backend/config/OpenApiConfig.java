@@ -67,20 +67,22 @@ public class OpenApiConfig {
                 )
         ));
 
-        Example filterRoomResultsExample = new Example().value(Map.of(
-                "query", "query FilterRoomResults($input: FilterRoomResultsInput!) { filterRoomResults(input: $input) { items { roomTypeId roomTypeName description occupancy amenities images baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } filters { filterKey filterType options { value count } minValue maxValue } page size totalItems totalPages hasNext hasPrevious } }",
-                "operationName", "FilterRoomResults",
+        Example searchRoomsExample = new Example().value(Map.of(
+                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { items { roomTypeId roomTypeName description occupancy amenities images baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } filters { filterKey filterType options { value count } minValue maxValue } page size totalItems totalPages hasNext hasPrevious } }",
+                "operationName", "SearchRooms",
                 "variables", Map.of(
-                        "input", Map.of(
-                                "tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd",
-                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
-                                "checkIn", "2026-04-01",
-                                "checkOut", "2026-04-03",
-                                "rooms", 2,
-                                "accessible", true,
-                                "page", 0,
-                                "size", 3,
-                                "filters", List.of(
+                        "input", Map.ofEntries(
+                                Map.entry("tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd"),
+                                Map.entry("propertyId", "b6299de0-2340-4275-a127-04d69896afb6"),
+                                Map.entry("checkIn", "2026-04-01"),
+                                Map.entry("checkOut", "2026-04-03"),
+                                Map.entry("rooms", 2),
+                                Map.entry("accessible", true),
+                                Map.entry("page", 0),
+                                Map.entry("size", 3),
+                                Map.entry("sortBy", "TOTAL_PRICE"),
+                                Map.entry("sortDirection", "ASC"),
+                                Map.entry("filters", List.of(
                                         Map.of(
                                                 "filterName", "bedType",
                                                 "options", List.of("King Bed", "Twin Bed")
@@ -94,24 +96,7 @@ public class OpenApiConfig {
                                                 "minValue", 300.0,
                                                 "maxValue", 400.0
                                         )
-                                )
-                        )
-                )
-        ));
-
-        Example searchRoomsExample = new Example().value(Map.of(
-                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { items { roomTypeId roomTypeName description occupancy amenities baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } filters { filterKey filterType options { value count } minValue maxValue } page size totalItems totalPages hasNext hasPrevious } }",
-                "operationName", "SearchRooms",
-                "variables", Map.of(
-                        "input", Map.of(
-                                "tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd",
-                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
-                                "checkIn", "2026-04-01",
-                                "checkOut", "2026-04-03",
-                                "rooms", 2,
-                                "accessible", true,
-                                "page", 0,
-                                "size", 3
+                                ))
                         )
                 )
         ));
@@ -174,7 +159,6 @@ public class OpenApiConfig {
         graphqlExamples.put("config", configExample);
         graphqlExamples.put("configByTenantName", configByTenantNameExample);
         graphqlExamples.put("calendarPrices", calendarPricesExample);
-        graphqlExamples.put("filterRoomResults", filterRoomResultsExample);
         graphqlExamples.put("searchRooms", searchRoomsExample);
         graphqlExamples.put("prices", pricesExample);
         graphqlExamples.put("updateTenant", updateTenantExample);
@@ -207,4 +191,3 @@ public class OpenApiConfig {
                         .addPathItem("/api/graphql", new PathItem().post(graphqlOperation)));
     }
 }
-

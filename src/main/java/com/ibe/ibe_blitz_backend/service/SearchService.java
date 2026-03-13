@@ -2,8 +2,11 @@ package com.ibe.ibe_blitz_backend.service;
 
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
+import com.ibe.ibe_blitz_backend.dto.RoomSortBy;
 import com.ibe.ibe_blitz_backend.dto.RoomSpecSummaryDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
+import com.ibe.ibe_blitz_backend.dto.SelectedFilterInputDto;
+import com.ibe.ibe_blitz_backend.dto.SortDirection;
 import com.ibe.ibe_blitz_backend.entities.Prices;
 import com.ibe.ibe_blitz_backend.entities.Property;
 import com.ibe.ibe_blitz_backend.entities.RoomSpec;
@@ -15,7 +18,13 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +36,8 @@ public class SearchService {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 3;
     private static final int MAX_SIZE = 3;
+    private static final RoomSortBy DEFAULT_SORT_BY = RoomSortBy.TOTAL_PRICE;
+    private static final SortDirection DEFAULT_SORT_DIRECTION = SortDirection.ASC;
 
     public RoomSearchResponseDto searchRooms(SearchRoomsInputDto input) {
         validate(input);
@@ -58,49 +69,25 @@ public class SearchService {
             return emptyPage(input);
         }
 
-        List<RoomSearchResultDto> availableRooms = buildAvailableRooms(input, stayNights, priceRows);
-        return paginate(availableRooms, input);
-    }
+        List<RoomSearchResultDto> rooms = buildAvailableRooms(input, stayNights, priceRows);
+        rooms = dynamicFilterService.applyFilters(rooms, defaultFilters(input));
 
-    public List<RoomSearchResultDto> findAvailableRooms(SearchRoomsInputDto input) {
-        validate(input);
-        Property property = propertyRepository.findByPropertyIdAndTenant_TenantId(input.getPropertyId(), input.getTenantId())
-                .orElseThrow(() -> new IllegalArgumentException("property not found for tenant"));
+        RoomSortBy sortBy = input.getSortBy() == null ? DEFAULT_SORT_BY : input.getSortBy();
+        SortDirection sortDirection = input.getSortDirection() == null ? DEFAULT_SORT_DIRECTION : input.getSortDirection();
+        rooms = sortRooms(rooms, sortBy, sortDirection);
 
-        long stayNights = input.getCheckIn().datesUntil(input.getCheckOut()).count();
-        if (property.getLengthOfStay() != null && stayNights > property.getLengthOfStay()) {
-            throw new IllegalArgumentException("stay exceeds property lengthOfStay");
-        }
-        if (property.getRoomCount() != null && input.getRooms() > property.getRoomCount()) {
-            throw new IllegalArgumentException("rooms exceeds property roomCount");
-        }
-        if (Boolean.TRUE.equals(input.getAccessible()) && !Boolean.TRUE.equals(property.getAccessibleFlag())) {
-            return List.of();
-        }
-
-        Date from = Date.from(input.getCheckIn().atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Date toInclusive = Date.from(input.getCheckOut().minusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant());
-
-        List<Prices> priceRows = priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(
-                input.getPropertyId(),
-                input.getTenantId(),
-                from,
-                toInclusive
-        );
-
-        if (priceRows.isEmpty() || stayNights <= 0) {
-            return List.of();
-        }
-
-        Map<UUID, List<Prices>> groupedByRoomType = priceRows.stream()
-                .filter(p -> p.getRoomType() != null && p.getRoomType().getRoomTypeId() != null)
-                .collect(Collectors.groupingBy(p -> p.getRoomType().getRoomTypeId()));
-
-        return buildAvailableRooms(input, stayNights, priceRows);
-    }
-
-    public RoomSearchResponseDto buildSearchResponse(List<RoomSearchResultDto> rooms, SearchRoomsInputDto input) {
         return paginate(rooms, input);
+    }
+
+    public List<RoomSearchResultDto> sortRooms(List<RoomSearchResultDto> results, RoomSortBy sortBy, SortDirection sortDirection) {
+        Comparator<RoomSearchResultDto> comparator = comparatorFor(sortBy);
+        if (sortDirection == SortDirection.DESC) {
+            comparator = comparator.reversed();
+        }
+
+        return results.stream()
+                .sorted(comparator.thenComparing(RoomSearchResultDto::getRoomTypeName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
+                .toList();
     }
 
     private void validate(SearchRoomsInputDto input) {
@@ -188,7 +175,6 @@ public class SearchService {
                     .build());
         }
 
-        results.sort(Comparator.comparing(RoomSearchResultDto::getTotalPrice));
         return results;
     }
 
@@ -226,6 +212,25 @@ public class SearchService {
                 .hasPrevious(false)
                 .build();
     }
+
+    private Comparator<RoomSearchResultDto> comparatorFor(RoomSortBy sortBy) {
+        return switch (sortBy) {
+            case OCCUPANCY -> Comparator.comparing(RoomSearchResultDto::getOccupancy, Comparator.nullsLast(Integer::compareTo));
+            case AREA -> Comparator.comparing(
+                    room -> room.getRoomSpec() == null ? null : room.getRoomSpec().getArea(),
+                    Comparator.nullsLast(BigDecimal::compareTo)
+            );
+            case AVAILABLE_COUNT -> Comparator.comparing(RoomSearchResultDto::getAvailableCount, Comparator.nullsLast(Integer::compareTo));
+            case TOTAL_PRICE -> Comparator.comparing(RoomSearchResultDto::getTotalPrice, Comparator.nullsLast(BigDecimal::compareTo));
+        };
+    }
+
+    private List<SelectedFilterInputDto> defaultFilters(SearchRoomsInputDto input) {
+        if (input == null || input.getFilters() == null) {
+            return List.of();
+        }
+        return input.getFilters().stream()
+                .filter(Objects::nonNull)
+                .toList();
+    }
 }
-
-

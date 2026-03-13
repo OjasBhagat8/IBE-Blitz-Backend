@@ -1,6 +1,5 @@
 package com.ibe.ibe_blitz_backend.controllers;
 
-import com.ibe.ibe_blitz_backend.dto.RoomSearchResultDto;
 import com.ibe.ibe_blitz_backend.dto.RoomSearchResponseDto;
 import com.ibe.ibe_blitz_backend.dto.SearchRoomsInputDto;
 import com.ibe.ibe_blitz_backend.service.SearchService;
