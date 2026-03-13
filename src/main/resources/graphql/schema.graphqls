@@ -10,6 +10,8 @@ type Query {
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate:String) : [DailyLeastPrice!]!
     roomFilters(propertyId: ID!): [RoomFilter!]!
     searchRooms(input: SearchRoomsInput!): [RoomSearchResult!]!
+    roomDeals(input: RoomDealsInput!): RoomDeals!
+    applyPromoCode(input: PromoCodeApplyInput!): PromotionDeal!
     prices(propertyId: ID!, fromDate: String!, toDate: String!): [RoomPriceRecord!]!
 }
 
@@ -73,6 +75,28 @@ input SearchRoomsInput {
     accessible: Boolean
 }
 
+input RoomDealsInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+}
+
+input PromoCodeApplyInput {
+    roomTypeId: ID!
+    propertyId: ID!
+    checkIn: String!
+    checkOut: String!
+    guestSelections: [GuestSelectionInput!]!
+    promoCode: String!
+}
+
+input GuestSelectionInput {
+    guestTypeName: String!
+    count: Int!
+}
+
 type RoomSearchResult {
     roomTypeId: ID!
     roomTypeName: String!
@@ -84,6 +108,28 @@ type RoomSearchResult {
     roomSpec: RoomSpecSummary
     totalPrice: Float!
     availableCount: Int!
+}
+
+type StandardRate {
+    title: String!
+    description: String!
+    totalPrice: Float!
+}
+
+type PromotionDeal {
+    promotionId: ID!
+    promoCodeId: ID
+    title: String!
+    description: String
+    totalPrice: Float!
+    originalPrice: Float!
+    discountAmount: Float!
+    promotionType: String!
+}
+
+type RoomDeals {
+    standardRate: StandardRate!
+    deals: [PromotionDeal!]!
 }
 
 type RoomSpecSummary {
