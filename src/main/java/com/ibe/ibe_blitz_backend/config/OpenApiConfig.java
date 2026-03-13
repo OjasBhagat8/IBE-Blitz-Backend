@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -66,25 +67,36 @@ public class OpenApiConfig {
                 )
         ));
 
-        Example roomFiltersExample = new Example().value(Map.of(
-                "query", "query RoomFilters($propertyId: ID!) { roomFilters(propertyId: $propertyId) { filterId filterName options { optionId value } } }",
-                "operationName", "RoomFilters",
-                "variables", Map.of(
-                        "propertyId", "b6299de0-2340-4275-a127-04d69896afb6"
-                )
-        ));
-
         Example searchRoomsExample = new Example().value(Map.of(
-                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { roomTypeId roomTypeName description occupancy amenities baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } }",
+                "query", "query SearchRooms($input: SearchRoomsInput!) { searchRooms(input: $input) { items { roomTypeId roomTypeName description occupancy amenities images baseRate roomSpec { roomSpecId bedType area minOcc maxOcc } totalPrice availableCount } filters { filterKey filterType options { value count } minValue maxValue } page size totalItems totalPages hasNext hasPrevious } }",
                 "operationName", "SearchRooms",
                 "variables", Map.of(
-                        "input", Map.of(
-                                "tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd",
-                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
-                                "checkIn", "2026-04-01",
-                                "checkOut", "2026-04-03",
-                                "rooms", 2,
-                                "accessible", true
+                        "input", Map.ofEntries(
+                                Map.entry("tenantId", "3610cc5b-d939-4c91-a0b6-bc7c4cda0ecd"),
+                                Map.entry("propertyId", "b6299de0-2340-4275-a127-04d69896afb6"),
+                                Map.entry("checkIn", "2026-04-01"),
+                                Map.entry("checkOut", "2026-04-03"),
+                                Map.entry("rooms", 2),
+                                Map.entry("accessible", true),
+                                Map.entry("page", 0),
+                                Map.entry("size", 3),
+                                Map.entry("sortBy", "TOTAL_PRICE"),
+                                Map.entry("sortDirection", "ASC"),
+                                Map.entry("filters", List.of(
+                                        Map.of(
+                                                "filterName", "bedType",
+                                                "options", List.of("King Bed", "Twin Bed")
+                                        ),
+                                        Map.of(
+                                                "filterName", "amenities",
+                                                "options", List.of("Wifi", "Breakfast")
+                                        ),
+                                        Map.of(
+                                                "filterName", "area",
+                                                "minValue", 300.0,
+                                                "maxValue", 400.0
+                                        )
+                                ))
                         )
                 )
         ));
@@ -147,7 +159,6 @@ public class OpenApiConfig {
         graphqlExamples.put("config", configExample);
         graphqlExamples.put("configByTenantName", configByTenantNameExample);
         graphqlExamples.put("calendarPrices", calendarPricesExample);
-        graphqlExamples.put("roomFilters", roomFiltersExample);
         graphqlExamples.put("searchRooms", searchRoomsExample);
         graphqlExamples.put("prices", pricesExample);
         graphqlExamples.put("updateTenant", updateTenantExample);
@@ -180,4 +191,3 @@ public class OpenApiConfig {
                         .addPathItem("/api/graphql", new PathItem().post(graphqlOperation)));
     }
 }
-
