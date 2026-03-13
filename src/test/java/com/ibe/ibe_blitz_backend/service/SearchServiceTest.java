@@ -411,6 +411,56 @@ class SearchServiceTest {
         verify(dynamicFilterService).buildFilters(anyList());
     }
 
+    @Test
+    void searchRoomsBuildsFiltersFromFilteredRoomsWhenMatchesExist() {
+        UUID tenantId = UUID.randomUUID();
+        UUID propertyId = UUID.randomUUID();
+        LocalDate checkIn = LocalDate.of(2026, 4, 1);
+        LocalDate checkOut = LocalDate.of(2026, 4, 3);
+        SearchRoomsInputDto input = SearchRoomsInputDto.builder()
+                .tenantId(tenantId)
+                .propertyId(propertyId)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .rooms(1)
+                .filters(List.of(SelectedFilterInputDto.builder()
+                        .filterName("bedType")
+                        .options(List.of("King Bed"))
+                        .build()))
+                .build();
+
+        when(propertyRepository.findByPropertyIdAndTenant_TenantId(any(), any()))
+                .thenReturn(Optional.of(searchableProperty(propertyId, 5, 5, false)));
+
+        RoomType kingRoom = roomType(UUID.randomUUID(), "King", "King Bed", "320.00");
+        RoomType twinRoom = roomType(UUID.randomUUID(), "Twin", "Twin Bed", "420.00");
+        when(priceRepository.findByProperty_PropertyIdAndProperty_Tenant_TenantIdAndDateBetween(any(), any(), any(), any()))
+                .thenReturn(List.of(
+                        priceRow(kingRoom, propertyId, checkIn, "100.00", 2),
+                        priceRow(kingRoom, propertyId, checkIn.plusDays(1), "100.00", 2),
+                        priceRow(twinRoom, propertyId, checkIn, "120.00", 2),
+                        priceRow(twinRoom, propertyId, checkIn.plusDays(1), "120.00", 2)
+                ));
+
+        when(dynamicFilterService.applyFilters(anyList(), eq(input.getFilters())))
+                .thenAnswer(invocation -> ((List<RoomSearchResultDto>) invocation.getArgument(0)).stream()
+                        .filter(room -> room.getRoomSpec() != null && "King Bed".equals(room.getRoomSpec().getBedType()))
+                        .toList());
+        when(dynamicFilterService.buildFilters(anyList())).thenReturn(List.of(
+                DynamicRoomFilterDto.builder()
+                        .filterKey("bedType")
+                        .filterType("CHECKBOX")
+                        .options(List.of())
+                        .build()
+        ));
+
+        RoomSearchResponseDto results = searchService.searchRooms(input);
+
+        assertEquals(1, results.getItems().size());
+        assertEquals("King", results.getItems().get(0).getRoomTypeName());
+        verify(dynamicFilterService).buildFilters(eq(results.getItems()));
+    }
+
     private static Prices priceRow(RoomType roomType, UUID propertyId, LocalDate date, String amount, int quantity) {
         return Prices.builder()
                 .roomType(roomType)

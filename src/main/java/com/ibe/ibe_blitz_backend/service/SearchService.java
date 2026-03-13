@@ -71,9 +71,8 @@ public class SearchService {
         }
 
         List<RoomSearchResultDto> availableRooms = buildAvailableRooms(input, stayNights, priceRows);
-        List<DynamicRoomFilterDto> filters = dynamicFilterService.buildFilters(availableRooms);
-
         List<RoomSearchResultDto> rooms = dynamicFilterService.applyFilters(availableRooms, defaultFilters(input));
+        List<DynamicRoomFilterDto> filters = dynamicFilterService.buildFilters(filterSourceRooms(availableRooms, rooms));
 
         RoomSortBy sortBy = input.getSortBy() == null ? DEFAULT_SORT_BY : input.getSortBy();
         SortDirection sortDirection = input.getSortDirection() == null ? DEFAULT_SORT_DIRECTION : input.getSortDirection();
@@ -235,5 +234,12 @@ public class SearchService {
         return input.getFilters().stream()
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    private List<RoomSearchResultDto> filterSourceRooms(List<RoomSearchResultDto> availableRooms, List<RoomSearchResultDto> filteredRooms) {
+        if (filteredRooms == null || filteredRooms.isEmpty()) {
+            return availableRooms;
+        }
+        return filteredRooms;
     }
 }
