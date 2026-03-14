@@ -8,7 +8,6 @@ type Query {
     config(tenantId: ID!): ConfigResponse!
     configByTenantName(tenantName: String!): ConfigResponse!
     calendarPrices(tenantId: ID!, propertyId: ID!, startDate: String): [DailyLeastPrice!]!
-    roomFilters(propertyId: ID!): [RoomFilter!]!
     searchRooms(input: SearchRoomsInput!): RoomSearchResponse!
     roomDeals(input: RoomDealsInput!): RoomDeals!
     applyPromoCode(input: PromoCodeApplyInput!): PromotionDeal!
@@ -165,6 +164,8 @@ type PromotionDeal {
 type RoomDeals {
     standardRate: StandardRate!
     deals: [PromotionDeal!]!
+}
+
 enum FilterType {
     CHECKBOX
     RANGE

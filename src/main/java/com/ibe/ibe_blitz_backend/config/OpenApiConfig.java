@@ -101,6 +101,45 @@ public class OpenApiConfig {
                 )
         ));
 
+        Example roomDealsExample = new Example().value(Map.of(
+                "query", "query RoomDeals($input: RoomDealsInput!) { roomDeals(input: $input) { standardRate { title description totalPrice } deals { promotionId promoCodeId title description totalPrice originalPrice discountAmount promotionType } } }",
+                "operationName", "RoomDeals",
+                "variables", Map.of(
+                        "input", Map.of(
+                                "roomTypeId", "b6299de0-2340-4275-a127-04d69896afb6",
+                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
+                                "checkIn", "2026-04-01",
+                                "checkOut", "2026-04-03",
+                                "guestSelections", List.of(
+                                        Map.of(
+                                                "guestTypeName", "Adult",
+                                                "count", 2
+                                        )
+                                )
+                        )
+                )
+        ));
+
+        Example applyPromoCodeExample = new Example().value(Map.of(
+                "query", "query ApplyPromoCode($input: PromoCodeApplyInput!) { applyPromoCode(input: $input) { promotionId promoCodeId title description totalPrice originalPrice discountAmount promotionType } }",
+                "operationName", "ApplyPromoCode",
+                "variables", Map.of(
+                        "input", Map.of(
+                                "roomTypeId", "b6299de0-2340-4275-a127-04d69896afb6",
+                                "propertyId", "b6299de0-2340-4275-a127-04d69896afb6",
+                                "checkIn", "2026-04-01",
+                                "checkOut", "2026-04-03",
+                                "promoCode", "SAVE10",
+                                "guestSelections", List.of(
+                                        Map.of(
+                                                "guestTypeName", "Adult",
+                                                "count", 2
+                                        )
+                                )
+                        )
+                )
+        ));
+
         Example pricesExample = new Example().value(Map.of(
                 "query", "query Prices($propertyId: ID!, $fromDate: String!, $toDate: String!) { prices(propertyId: $propertyId, fromDate: $fromDate, toDate: $toDate) { priceId roomTypeId roomTypeName propertyId date roomPrice quantity } }",
                 "operationName", "Prices",
@@ -160,6 +199,8 @@ public class OpenApiConfig {
         graphqlExamples.put("configByTenantName", configByTenantNameExample);
         graphqlExamples.put("calendarPrices", calendarPricesExample);
         graphqlExamples.put("searchRooms", searchRoomsExample);
+        graphqlExamples.put("roomDeals", roomDealsExample);
+        graphqlExamples.put("applyPromoCode", applyPromoCodeExample);
         graphqlExamples.put("prices", pricesExample);
         graphqlExamples.put("updateTenant", updateTenantExample);
         graphqlExamples.put("updatePropertySettings", updatePropertySettingsExample);
