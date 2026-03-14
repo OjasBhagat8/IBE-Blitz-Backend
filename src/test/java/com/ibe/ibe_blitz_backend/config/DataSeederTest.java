@@ -11,6 +11,7 @@ import com.ibe.ibe_blitz_backend.repositories.FiltersRepository;
 import com.ibe.ibe_blitz_backend.repositories.GuestTypeRepository;
 import com.ibe.ibe_blitz_backend.repositories.PriceRepository;
 import com.ibe.ibe_blitz_backend.repositories.PropertyRepository;
+import com.ibe.ibe_blitz_backend.repositories.PromotionRepository;
 import com.ibe.ibe_blitz_backend.repositories.RoomSpecRepository;
 import com.ibe.ibe_blitz_backend.repositories.RoomTypeRepository;
 import com.ibe.ibe_blitz_backend.repositories.TenantRepository;
@@ -50,6 +51,8 @@ class DataSeederTest {
     private FilterOptionsRepository filterOptionsRepository;
     @Mock
     private PriceRepository priceRepository;
+    @Mock
+    private PromotionRepository promotionRepository;
 
     @InjectMocks
     private DataSeeder dataSeeder;
@@ -112,6 +115,7 @@ class DataSeederTest {
         });
 
         when(priceRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(promotionRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(filterConfigRepository.save(any(FilterConfig.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(filtersRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(filterOptionsRepository.saveAll(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -124,6 +128,7 @@ class DataSeederTest {
         verify(roomSpecRepository, times(1)).saveAll(any());
         verify(roomTypeRepository, times(1)).saveAll(any());
         verify(priceRepository, times(1)).saveAll(any());
+        verify(promotionRepository, times(1)).saveAll(any());
         verify(filterConfigRepository, times(5)).save(any(FilterConfig.class));
         verify(filtersRepository, times(5)).saveAll(any());
         verify(filterOptionsRepository, times(5)).saveAll(any());
