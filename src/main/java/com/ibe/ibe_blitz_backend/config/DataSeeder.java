@@ -108,7 +108,7 @@ public class DataSeeder implements CommandLineRunner {
                 Tenant hilton = tenantRepository.save(Tenant.builder()
                                 .tenantName("Hilton")
                                 .tenantLogo("https://upload.wikimedia.org/wikipedia/commons/8/8a/Hilton_Worldwide_logo.svg")
-                                .tenantBanner("https://thumbs.dreamstime.com/b/hilton-logo-sign-american-hotel-brand-building-business-hospitality-travel-industry-exterior-tall-house-against-401671125.jpg")
+                                .tenantBanner("https://images.pexels.com/photos/751268/pexels-photo-751268.jpeg")
                                 .tenantCopyright("© Hilton Worldwide Holdings Inc. All rights reserved.")
                                 .build());
 
